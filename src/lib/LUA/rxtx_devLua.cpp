@@ -3,6 +3,7 @@
 
 char strPowerLevels[] = "10;25;50;100;250;500;1000;2000;MatchTX ";
 const char STR_EMPTYSPACE[] = { 0 };
+const char STR_US[] = "us";
 const char STR_LUA_PACKETRATES[] =
 #if defined(RADIO_SX127X)
     "D50Hz(-112dBm);25Hz(-123dBm);50Hz(-120dBm);100Hz(-117dBm);100Hz Full(-112dBm);200Hz(-112dBm)";
