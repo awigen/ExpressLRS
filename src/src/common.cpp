@@ -111,8 +111,11 @@ expresslrs_rf_pref_params_s *ExpressLRS_currAirRate_RFperfParams;
 connectionState_e connectionState = disconnected;
 bool connectionHasModelMatch;
 
-uint32_t ChannelData[CRSF_NUM_CHANNELS];      // Current state of channels, CRSF format
-uint32_t ChannelMixedData[CRSF_NUM_CHANNELS]; // Current state of channels after mixing, CRSF format
+uint32_t ChannelData[CRSF_NUM_CHANNELS + GYRO_SOURCES];      // Current state of channels, CRSF format
+
+// Current state of channels after mixing, CRSF format
+// Note that we have extra destination channels due to gyro mix destinations
+uint32_t ChannelMixedData[CRSF_NUM_CHANNELS + GYRO_DESTINATIONS];
 
 uint8_t MasterUID[6];                       // The definitive user UID
 uint8_t UID[6];                             // The currently running UID

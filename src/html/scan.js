@@ -144,6 +144,10 @@ const channels = ['ch1', 'ch2', 'ch3', 'ch4',
 'ch5 (AUX1)', 'ch6 (AUX2)', 'ch7 (AUX3)', 'ch8 (AUX4)',
 'ch9 (AUX5)', 'ch10 (AUX6)', 'ch11 (AUX7)', 'ch12 (AUX8)',
 'ch13 (AUX9)', 'ch14 (AUX10)', 'ch15 (AUX11)', 'ch16 (AUX12)'];
+// Must match config.h mix_source_t
+const otherSources = ['Gyro Roll Out', 'Gyro Pitch Out', 'Gyro Yaw Out']
+// Must match config.h mix_destination_t
+const otherDestinations = ['Gyro Mode', 'Gyro Gain', 'Gyro Roll Cmd', 'Gyro Pitch Cmd', 'Gyro Yaw Cmd']
 
 function hideUnusedMixes() {
   const MAX_MIXES = 32
@@ -177,10 +181,10 @@ function updateMixerSettings(arMixes) {
     const offset      = Number(int11ToBigInt(Number((value >> 29n) & 2047n))); // 11 bits
 
     const sourceSelect = enumSelectGenerate(
-      `mix_${index}_source`, source, channels.map((name) => `CRSF ${name}`)
+      `mix_${index}_source`, source, channels.map((name) => `CRSF ${name}`).concat(otherSources)
     );
     const destinationSelect = enumSelectGenerate(
-      `mix_${index}_destination`, destination, channels.map((name) => `Output ${name}`)
+      `mix_${index}_destination`, destination, channels.map((name) => `Output ${name}`).concat(otherDestinations)
     );
     htmlFields.push(`
     <tr id="mix_${index}">

@@ -6,6 +6,10 @@
 #include "config.h"
 #include "logging.h"
 #include "rxtx_intf.h"
+#include "logging.h"
+#if defined(HAS_GYRO)
+#include "gyro.h"
+#endif
 
 static int8_t servoPins[PWM_MAX_CHANNELS];
 static pwm_channel_t pwmChannels[PWM_MAX_CHANNELS];
@@ -114,6 +118,12 @@ static void servosUpdate(unsigned long now)
             }
 
             uint16_t us = CRSF_to_US(crsfVal);
+
+            #if defined(HAS_GYRO)
+            // Mix in gyro adjustments before handling inversion
+            gyro.mixer(ch, &us);
+            #endif
+
             // Flip the output around the mid-value if inverted
             // (1500 - usOutput) + 1500
             if (chConfig->val.inverted)

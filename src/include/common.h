@@ -249,11 +249,13 @@ bool isDualRadio();
 #define AUX10 13
 #define AUX11 14
 #define AUX12 15
+#define GYRO_SOURCES 3
+#define GYRO_DESTINATIONS 5
 
 //ELRS SPECIFIC OTA CRC
 //Koopman formatting https://users.ece.cmu.edu/~koopman/crc/
 #define ELRS_CRC_POLY 0x07 // 0x83
 #define ELRS_CRC14_POLY 0x2E57 // 0x372B
 
-extern uint32_t ChannelData[CRSF_NUM_CHANNELS]; // Current state of channels, CRSF format
-extern uint32_t ChannelMixedData[CRSF_NUM_CHANNELS]; // Current state of channels after mixing, CRSF format
+extern uint32_t ChannelData[CRSF_NUM_CHANNELS + GYRO_SOURCES]; // Current state of channels, CRSF format
+extern uint32_t ChannelMixedData[CRSF_NUM_CHANNELS + GYRO_DESTINATIONS]; // Current state of channels after mixing, CRSF format

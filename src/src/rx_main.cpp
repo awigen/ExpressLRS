@@ -35,6 +35,8 @@
 #include "devSerialUpdate.h"
 #include "devBaro.h"
 #include "devMSPVTX.h"
+#include "devGyro.h"
+#include "gyro.h"
 
 #if defined(PLATFORM_ESP8266)
 #include <user_interface.h>
@@ -80,6 +82,9 @@ device_affinity_t ui_devices[] = {
 #endif
 #ifdef HAS_SERVO_OUTPUT
   {&ServoOut_device, 1},
+#endif
+#ifdef HAS_GYRO
+  {&Gyro_device, 1},
 #endif
 #ifdef HAS_BARO
   {&Baro_device, 0}, // must come after AnalogVbat_device to slow updates
@@ -230,12 +235,10 @@ extern void setWifiUpdateMode();
 
 void applyMixes()
 {
-    int64_t newChannelData[CRSF_NUM_CHANNELS];
-    for (uint8_t i = 0; i < CRSF_NUM_CHANNELS; i++)
+    int64_t newChannelData[CRSF_NUM_CHANNELS + GYRO_DESTINATIONS];
+    for (uint8_t i = 0; i < CRSF_NUM_CHANNELS + GYRO_DESTINATIONS; i++)
         newChannelData[i] = CRSF_CHANNEL_VALUE_MID;
     
-    // memset(newChannelData, 0, sizeof(newChannelData));
-
     for (unsigned mix_number = 0; mix_number < MAX_MIXES; mix_number++)
     {
         const rx_config_mix_t *mix = config.GetMix(mix_number);
@@ -245,8 +248,9 @@ void applyMixes()
         
         newChannelData[mix->val.destination] += mix->val.offset;
 
-        // The fist 16 enums are CRSF input channels
-        if (mix->val.source < 16)
+        // The fist 16 enums are CRSF input channels and the next three are gyro outputs
+        // ref: mix_source_t
+        if (mix->val.source < 19)
         {
             const unsigned crsfVal = ChannelData[mix->val.source];
             if (crsfVal < CRSF_CHANNEL_VALUE_MID)
@@ -266,7 +270,7 @@ void applyMixes()
         }
         else
         {
-            switch (mix->val.source)
+            switch ((mix_source_t) mix->val.source)
             {
             case MIX_SOURCE_FAILSAFE:
             {
@@ -278,7 +282,10 @@ void applyMixes()
                 break;
             }
 
-            // Later we will add other source mixes here (gyro, failsafe, etc)
+            case MIX_SOURCE_GYRO_ROLL:
+            {
+
+            }
 
             default:
                 break;
@@ -286,7 +293,7 @@ void applyMixes()
         }
     }
 
-    for (unsigned ch = 0; ch < CRSF_NUM_CHANNELS; ch++)
+    for (unsigned ch = 0; ch < CRSF_NUM_CHANNELS + GYRO_DESTINATIONS; ch++)
     {
         if (newChannelData[ch] < CRSF_CHANNEL_VALUE_MIN)
             ChannelMixedData[ch] = CRSF_CHANNEL_VALUE_MIN;

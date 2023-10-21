@@ -119,5 +119,9 @@
 # Also logs forced resyncs when a packet is delayed or missed.
 #-DDEBUG_OPENTX_SYNC
 
+# Enable printing of Gyro data such as accelerometer and raw gyro readings, as wel as calculated
+# pitch/roll/yaw etc.
+#-DDEBUG_GYRO_STATS
+
 # Use an ELRS TX and RX as a transparent UART over the air
 #-DUSE_AIRPORT_AT_BAUD=9600
