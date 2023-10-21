@@ -4,6 +4,7 @@
 #include "elrs_eeprom.h"
 #include "options.h"
 #include "common.h"
+#include "gyro_types.h"
 
 #if defined(PLATFORM_ESP32)
 #include <nvs_flash.h>
@@ -278,6 +279,11 @@ typedef struct {
     rx_config_pwm_t pwmChannels[PWM_MAX_CHANNELS];
     rx_config_pwm_limits_t pwmLimits[PWM_MAX_CHANNELS];
     rx_config_mix_t mixes[MAX_MIXES];
+    #if defined(HAS_GYRO)
+    rx_config_gyro_channel_t gyroChannels[PWM_MAX_CHANNELS];
+    rx_config_gyro_timings_t gyroTimings[PWM_MAX_CHANNELS];
+    rx_config_gyro_mode_pos_t gyroModes; // Gyro functions for switch positions
+    #endif
 } rx_config_t;
 
 class RxConfig
@@ -303,6 +309,17 @@ public:
     const rx_config_pwm_limits_t *GetPwmChannelLimits(uint8_t ch) const { return &m_config.pwmLimits[ch]; }
     #endif
     const rx_config_mix_t *GetMix(uint8_t mixNumber) const { return &m_config.mixes[mixNumber]; }
+    #if defined(HAS_GYRO)
+    const rx_config_gyro_channel_t *GetGyroChannel(uint8_t ch) const { return &m_config.gyroChannels[ch]; }
+    gyro_input_channel_function_t GetGyroChannelInputMode(uint8_t ch) { return ( gyro_input_channel_function_t) m_config.gyroChannels[ch].val.input_mode; }
+    gyro_output_channel_function_t GetGyroChannelOutputMode(uint8_t ch) { return ( gyro_output_channel_function_t) m_config.gyroChannels[ch].val.output_mode; }
+    bool GetGyroChannelOutputInverted(uint8_t ch) { return m_config.gyroChannels[ch].val.inverted; }
+    const rx_config_gyro_timings_t *GetGyroChannelTimings(uint8_t ch) const { return &m_config.gyroTimings[ch]; }
+
+    const rx_config_gyro_mode_pos_t *GetGyroModePos() const { return &m_config.gyroModes;}
+    const int8_t GetGyroInputChannelNumber(gyro_input_channel_function_t mode);
+    const int8_t GetGyroOutputChannelNumber(gyro_output_channel_function_t mode);
+    #endif
     bool GetForceTlmOff() const { return m_config.forceTlmOff; }
     uint8_t GetRateInitialIdx() const { return m_config.rateInitialIdx; }
     eSerialProtocol GetSerialProtocol() const { return (eSerialProtocol)m_config.serialProtocol; }
@@ -324,6 +341,11 @@ public:
     void SetPwmChannelRaw(uint8_t ch, uint32_t raw);
     void SetPwmChannelLimits(uint8_t ch, uint16_t min, uint16_t max);
     void SetPwmChannelLimitsRaw(uint8_t ch, uint32_t raw);
+    #if defined(HAS_GYRO)
+    void SetGyroChannel(uint8_t ch, uint8_t input_mode, uint8_t output_mode, bool inverted);
+    void SetGyroChannelRaw(uint8_t ch, uint32_t raw);
+    void SetGyroModePos(uint8_t pos, gyro_mode_t mode);
+    #endif
     #endif
     void SetMixer(
         uint8_t mixNumber, mix_source_t source, mix_destination_t destination,
@@ -342,6 +364,8 @@ private:
     void UpgradeEepromV6();
     void UpgradeEepromV7();
     void UpgradeEepromV8();
+
+    void debugGyroConfiguration();
 
     rx_config_t m_config;
     ELRS_EEPROM *m_eeprom;

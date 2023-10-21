@@ -1,6 +1,7 @@
 #include "config.h"
 #include "config_legacy.h"
 #include "common.h"
+#include "gyro.h"
 #include "POWERMGNT.h"
 #include "OTA.h"
 #include "helpers.h"
@@ -1068,6 +1069,9 @@ RxConfig::SetDefaults(bool commit)
         }
         SetPwmChannel(ch, 1500, ch, false, mode, false);
         SetPwmChannelLimits(ch, 885, 2135);
+        #if defined(HAS_GYRO)
+        SetGyroChannel(ch, 0, 0, 0);
+        #endif
     }
     SetPwmChannel(2, 988, 2, false, 0, false); // ch2 is throttle, failsafe it to 988
 #endif
@@ -1099,6 +1103,110 @@ RxConfig::SetStorageProvider(ELRS_EEPROM *eeprom)
 }
 
 #if defined(GPIO_PIN_PWM_OUTPUTS)
+#if defined(HAS_GYRO)
+
+void
+RxConfig::debugGyroConfiguration()
+{
+    DBGLN("Gyro configuration:")
+    for (uint8_t ch = 0; ch < PWM_MAX_CHANNELS; ch++)
+    {
+        rx_config_gyro_channel_t *config = &m_config.gyroChannels[ch];
+        if (config->val.input_mode == FN_IN_NONE && config->val.output_mode == FN_NONE)
+            continue;
+        DBGLN("CH %d: %d %d %s",
+              ch, config->val.input_mode, config->val.output_mode, config->val.inverted ? "inverted" : "")
+        delay(100);
+    }
+}
+
+void
+RxConfig::SetGyroChannel(uint8_t ch, uint8_t input_mode, uint8_t output_mode, bool inverted)
+{
+    if (ch > PWM_MAX_CHANNELS)
+        return;
+
+    rx_config_gyro_channel_t *config = &m_config.gyroChannels[ch];
+    rx_config_gyro_channel_t newConfig;
+    newConfig.val.input_mode = input_mode;
+    newConfig.val.output_mode = output_mode;
+    newConfig.val.inverted = inverted;
+
+    if (config->raw == newConfig.raw)
+        return;
+
+    config->raw = newConfig.raw;
+    debugGyroConfiguration();
+    m_modified = true;
+}
+
+void
+RxConfig::SetGyroChannelRaw(uint8_t ch, uint32_t raw)
+{
+    if (ch > PWM_MAX_CHANNELS)
+        return;
+
+    rx_config_gyro_channel_t *config = &m_config.gyroChannels[ch];
+    if (config->raw == raw)
+        return;
+
+    config->raw = raw;
+    m_modified = true;
+    debugGyroConfiguration();
+}
+
+void
+RxConfig::SetGyroModePos(uint8_t pos, gyro_mode_t mode)
+{
+    if (pos > 4)
+        return;
+
+    rx_config_gyro_mode_pos_t *modes = &m_config.gyroModes;
+    rx_config_gyro_mode_pos_t newModes;
+    newModes.raw = modes->raw;
+
+    switch (pos)
+    {
+    case 0:
+        newModes.val.pos1 = mode;
+        break;
+    case 1:
+        newModes.val.pos2 = mode;
+        break;
+    case 2:
+        newModes.val.pos3 = mode;
+        break;
+    case 3:
+        newModes.val.pos4 = mode;
+        break;
+    case 4:
+        newModes.val.pos5 = mode;
+        break;
+    }
+    if (modes->raw == newModes.raw)
+        return;
+
+    modes->raw = newModes.raw;
+    m_modified = true;
+}
+
+const int8_t RxConfig::GetGyroInputChannelNumber(gyro_input_channel_function_t mode)
+{
+    for (int8_t i = 0; i < GYRO_MAX_CHANNELS; i++)
+        if (GetGyroChannelInputMode(i) == mode)
+            return i;
+    return -1;
+}
+
+const int8_t RxConfig::GetGyroOutputChannelNumber(gyro_output_channel_function_t mode)
+{
+    for (uint8_t i = 0; i < GYRO_MAX_CHANNELS; i++)
+        if (GetGyroChannelOutputMode(i) == mode)
+            return i;
+    return -1;
+}
+#endif // HAS_GYRO
+
 void
 RxConfig::SetPwmChannel(uint8_t ch, uint16_t failsafe, uint8_t inputCh, bool inverted, uint8_t mode, bool narrow)
 {
