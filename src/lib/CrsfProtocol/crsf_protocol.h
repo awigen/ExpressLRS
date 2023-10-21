@@ -339,6 +339,16 @@ typedef struct crsf_sensor_flight_mode_s
 } PACKED crsf_flight_mode_t;
 
 /*
+// CRSF_FRAMETYPE_ATTITUDE
+typedef struct crsf_sensor_attitude_s
+{
+    int16_t pitch; // Pitch angle ( rad / 10000 ), BigEndian
+    int16_t roll;  // Roll angle ( rad / 10000 ), BigEndian
+    int16_t yaw;   // Yaw angle ( rad / 10000 ), BigEndian
+} PACKED crsf_sensor_attitude_t;
+*/
+
+/*
  * 0x14 Link statistics
  * Payload:
  *
@@ -442,6 +452,14 @@ static inline uint8_t ICACHE_RAM_ATTR CRSF_to_SWITCH3b(uint16_t ch)
         || ch > (CRSF_CHANNEL_VALUE_MID+CHANNEL_BIN_SIZE/4))
         return CRSF_to_N(ch, CHANNEL_BIN_COUNT);
     return 7;
+}
+
+// Convert CRSF to -1 to +10-(cnt-1), constrained between 1000us and 2000us
+static inline float ICACHE_RAM_ATTR CRSF_to_FLOAT(uint16_t val)
+{
+    return val <= CRSF_CHANNEL_VALUE_MID
+        ? float (val - CRSF_CHANNEL_VALUE_MID) / (CRSF_CHANNEL_VALUE_MID - CRSF_CHANNEL_VALUE_1000)
+        : float (val - CRSF_CHANNEL_VALUE_MID) / (CRSF_CHANNEL_VALUE_2000 - CRSF_CHANNEL_VALUE_MID);
 }
 
 // 3b switches use 0-5 to represent 6 positions switches and "7" to represent middle

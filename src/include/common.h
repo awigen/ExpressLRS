@@ -265,6 +265,9 @@ enum eAuxChannels : uint8_t
     CRSF_NUM_CHANNELS = 16
 };
 
+#define GYRO_SOURCES 3
+#define GYRO_DESTINATIONS 5
+
 //ELRS SPECIFIC OTA CRC
 //Koopman formatting https://users.ece.cmu.edu/~koopman/crc/
 #define ELRS_CRC_POLY 0x07 // 0x83
@@ -308,8 +311,8 @@ extern uint8_t ExpressLRS_currTlmDenom;
 extern connectionState_e connectionState;
 extern expresslrs_mod_settings_s *ExpressLRS_currAirRate_Modparams;
 extern expresslrs_rf_pref_params_s *ExpressLRS_currAirRate_RFperfParams;
-extern uint32_t ChannelData[CRSF_NUM_CHANNELS]; // Current state of channels, CRSF format
-extern uint32_t ChannelMixedData[CRSF_NUM_CHANNELS]; // Current state of channels after mixing, CRSF format
+extern uint32_t ChannelData[CRSF_NUM_CHANNELS + GYRO_SOURCES]; // Current state of channels, CRSF format
+extern uint32_t ChannelMixedData[CRSF_NUM_CHANNELS + GYRO_DESTINATIONS]; // Current state of channels after mixing, CRSF format
 
 uint32_t uidMacSeedGet();
 bool isDualRadio();
