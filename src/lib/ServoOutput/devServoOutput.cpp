@@ -6,6 +6,10 @@
 #include "config.h"
 #include "logging.h"
 #include "rxtx_intf.h"
+#include "logging.h"
+#if defined(HAS_GYRO)
+#include "gyro.h"
+#endif
 
 static int8_t servoPins[PWM_MAX_CHANNELS];
 static pwm_channel_t pwmChannels[PWM_MAX_CHANNELS];
@@ -117,6 +121,11 @@ static void servosUpdate(unsigned long now)
             {
                 us = 3000U - us;
             }
+
+            #if defined(HAS_GYRO)
+            // Mix in gyro adjustments
+            gyro.mixer(ch, &us);
+            #endif
 
             // Limit output values to configured limits
             const rx_config_pwm_limits_t *limits = config.GetPwmChannelLimits(ch);

@@ -308,6 +308,14 @@ typedef struct crsf_sensor_baro_vario_s
     int16_t verticalspd;  // Vertical speed in cm/s, BigEndian
 } PACKED crsf_sensor_baro_vario_t;
 
+// CRSF_FRAMETYPE_ATTITUDE
+typedef struct crsf_sensor_attitude_s
+{
+    int16_t pitch; // Pitch angle ( rad / 10000 ), BigEndian
+    int16_t roll;  // Roll angle ( rad / 10000 ), BigEndian
+    int16_t yaw;   // Yaw angle ( rad / 10000 ), BigEndian
+} PACKED crsf_sensor_attitude_t;
+
 /*
  * 0x14 Link statistics
  * Payload:
