@@ -18,6 +18,12 @@
 
 #define TX_CONFIG_VERSION   7U
 #define RX_CONFIG_VERSION   9U
+#if defined(HAS_GYRO)
+// This will force a wipe of the EEPROM for our new config structure
+#define RX_CONFIG_VERSION   10U
+#else
+#define RX_CONFIG_VERSION   9U
+#endif
 #define UID_LEN             6
 
 #if defined(TARGET_TX)
@@ -247,13 +253,14 @@ public:
     bool     IsModified() const { return m_modified; }
     #if defined(GPIO_PIN_PWM_OUTPUTS)
     const rx_config_pwm_t *GetPwmChannel(uint8_t ch) const { return &m_config.pwmChannels[ch]; }
+    const bool GetPwmChannelInverted(uint8_t ch) const { return m_config.pwmChannels[ch].val.inverted; }
     const rx_config_pwm_limits_t *GetPwmChannelLimits(uint8_t ch) const { return &m_config.pwmLimits[ch]; }
     #endif
     #if defined(HAS_GYRO)
     const rx_config_gyro_channel_t *GetGyroChannel(uint8_t ch) const { return &m_config.gyroChannels[ch]; }
     gyro_input_channel_function_t GetGyroChannelInputMode(uint8_t ch) { return ( gyro_input_channel_function_t) m_config.gyroChannels[ch].val.input_mode; }
     gyro_output_channel_function_t GetGyroChannelOutputMode(uint8_t ch) { return ( gyro_output_channel_function_t) m_config.gyroChannels[ch].val.output_mode; }
-    bool GetGyroChannelOutputInverted(uint8_t ch) { return m_config.gyroChannels[ch].val.inverted; }
+    const bool GetGyroChannelOutputInverted(uint8_t ch) { return m_config.gyroChannels[ch].val.inverted; }
     const rx_config_gyro_timings_t *GetGyroChannelTimings(uint8_t ch) const { return &m_config.gyroTimings[ch]; }
 
     const rx_config_gyro_mode_pos_t *GetGyroModePos() const { return &m_config.gyroModes;}

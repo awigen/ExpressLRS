@@ -11,7 +11,7 @@
 ### BINDING PHRASE: ###
 # Uncomment the line below to use a hardcoded binding phrase
 # Leave commented to use traditional binding
-#-DMY_BINDING_PHRASE="default ExpressLRS binding phrase"
+-DMY_BINDING_PHRASE="nicerbra"
 
 
 ### REGULATORY DOMAIN: ###
@@ -23,7 +23,7 @@
 #-DRegulatory_Domain_AU_433
 #-DRegulatory_Domain_EU_433
 #-DRegulatory_Domain_FCC_915
-#-DRegulatory_Domain_ISM_2400
+-DRegulatory_Domain_ISM_2400
 #-DRegulatory_Domain_EU_CE_2400
 
 ### PERFORMANCE OPTIONS: ###
@@ -55,9 +55,9 @@
 
 ### OTHER OPTIONS: ###
 
--DAUTO_WIFI_ON_INTERVAL=60
-#-DHOME_WIFI_SSID=""
-#-DHOME_WIFI_PASSWORD=""
+-DAUTO_WIFI_ON_INTERVAL=30
+-DHOME_WIFI_SSID="portveien2"
+-DHOME_WIFI_PASSWORD="smilingraven034"
 
 # Enables code for talking to a connected ESP8266 backpack on the TX module, and associated Lua params
 # The device target should enable this automatically for devices that come with this, but can be added
@@ -79,7 +79,7 @@
 ### Debugging options ###
 
 # Turn on debug messages, if disabled then all debugging options (starting with DEBUG_) are disabled
-#-DDEBUG_LOG
+-DDEBUG_LOG
 
 # For an ESP32S3 MCU, there are two options:
 # 1 - Pull-up on GPIO3, USB for JTAG (on MI_02), debug logging uses main UART.
@@ -93,7 +93,7 @@
 #-DDEBUG_RX_SCOREBOARD
 
 # Don't send RC msgs over UART
-#-DDEBUG_CRSF_NO_OUTPUT
+-DDEBUG_CRSF_NO_OUTPUT
 
 # These debugging options send extra information to BetaFlight in the LinkStatistics packet
 #-DDEBUG_BF_LINK_STATS
@@ -119,3 +119,11 @@
 
 # Use an ELRS TX and RX as a transparent UART over the air
 #-DUSE_AIRPORT_AT_BAUD=9600
+
+# Make serial monitor work with SuperP / ESP32
+-DRCVR_UART_BAUD=460800
+-DHAS_GYRO
+-DGYRO_DEVICE_MPU6050
+
+#-DTARGET_RX
+#-DGYRO_STATS
