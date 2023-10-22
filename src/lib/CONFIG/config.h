@@ -16,7 +16,7 @@
 #define RX_CONFIG_MAGIC     (0b10U << 30)
 
 #define TX_CONFIG_VERSION   7U
-#define RX_CONFIG_VERSION   8U
+#define RX_CONFIG_VERSION   9U
 #define UID_LEN             6
 
 #if defined(TARGET_TX)
@@ -182,12 +182,12 @@ constexpr uint8_t PWM_MAX_CHANNELS = 16;
 
 typedef union {
     struct {
-        uint32_t failsafe:10,    // us output during failsafe +988 (e.g. 512 here would be 1500us)
+        uint32_t failsafe:11,    // us output during failsafe
                  inputChannel:4, // 0-based input channel
                  inverted:1,     // invert channel output
                  mode:4,         // Output mode (eServoOutputMode)
                  narrow:1,       // Narrow output mode (half pulse width)
-                 unused:12;      // FUTURE: When someone complains "everyone" uses inverted polarity PWM or something :/
+                 unused:11;      // FUTURE: When someone complains "everyone" uses inverted polarity PWM or something :/
     } val;
     uint32_t raw;
 } rx_config_pwm_t;
@@ -262,6 +262,7 @@ private:
     void UpgradeEepromV5();
     void UpgradeEepromV6();
     void UpgradeEepromV7();
+    void UpgradeEepromV8();
 
     rx_config_t m_config;
     ELRS_EEPROM *m_eeprom;
