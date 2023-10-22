@@ -27,11 +27,11 @@ function getPwmFormData() {
     const narrow = _(`pwm_${ch}_nar`).checked ? 1 : 0;
     const failsafeField = _(`pwm_${ch}_fs`);
     let failsafe = failsafeField.value;
-    if (failsafe > 2011) failsafe = 2011;
-    if (failsafe < 988) failsafe = 988;
+    if (failsafe > 2135) failsafe = 2135;
+    if (failsafe < 885) failsafe = 885;
     failsafeField.value = failsafe;
 
-    const raw = (narrow << 19) | (mode << 15) | (invert << 14) | (inChannel << 10) | (failsafe - 988);
+    const raw = (narrow << 19) | (mode << 15) | (invert << 14) | (inChannel << 11) | (failsafe);
     // console.log(`PWM ${ch} mode=${mode} input=${inChannel} fs=${failsafe} inv=${invert} nar=${narrow} raw=${raw}`);
     outData.push(raw);
     ++ch;
@@ -58,14 +58,14 @@ function updatePwmSettings(arPwm, allowDshot) {
   let pin1SerialIndex = undefined;
   let pin3Index = undefined;
   let pin3SerialIndex = undefined;
-  // arPwm is an array of raw integers [49664,50688,51200]. 10 bits of failsafe position, 4 bits of input channel, 1 bit invert, 4 bits mode, 1 bit for narrow/750us
+  // arPwm is an array of raw integers [49664,50688,51200]. 11 bits of failsafe position, 4 bits of input channel, 1 bit invert, 4 bits mode, 1 bit for narrow/750us
   const htmlFields = ['<div class="mui-panel"><table class="pwmtbl mui-table"><tr><th class="mui--text-center">Output</th><th>Mode</th><th>Input</th><th class="mui--text-center">Invert?</th><th class="mui--text-center">750us?</th><th>Failsafe</th></tr>'];
   arPwm.forEach((item, index) => {
-    const failsafe = (item.config & 1023) + 988; // 10 bits
-    const ch = (item.config >> 10) & 15; // 4 bits
-    const inv = (item.config >> 14) & 1;
-    const mode = (item.config >> 15) & 15; // 4 bits
-    const narrow = (item.config >> 19) & 1;
+    const failsafe = (item.config & 2047); // 11 bits
+    const ch = (item.config >> 11) & 15; // 4 bits
+    const inv = (item.config >> 15) & 1;
+    const mode = (item.config >> 16) & 15; // 4 bits
+    const narrow = (item.config >> 20) & 1;
     const pin = item.pin;
     const modes = ['50Hz', '60Hz', '100Hz', '160Hz', '333Hz', '400Hz', '10KHzDuty', 'On/Off'];
     // only ESP32 devices allow DShot

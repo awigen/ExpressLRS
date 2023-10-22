@@ -717,6 +717,7 @@ void RxConfig::Load()
     UpgradeEepromV5();
     UpgradeEepromV6();
     UpgradeEepromV7();
+    UpgradeEepromV8();
     m_config.version = RX_CONFIG_VERSION | RX_CONFIG_MAGIC;
     m_modified = true;
     Commit();
@@ -829,7 +830,7 @@ void RxConfig::UpgradeEepromV6()
 
 // ========================================================
 // V7 Upgrade
-static void PwmConfigV7(rx_config_pwm_t * const current)
+static void PwmConfigV7(v6_rx_config_pwm_t * const current)
 {
     if (current->val.mode > somOnOff)
     {
@@ -846,10 +847,59 @@ void RxConfig::UpgradeEepromV7()
     {
         for (unsigned ch=0; ch<16; ++ch)
         {
-            PwmConfigV7(&m_config.pwmChannels[ch]);
+            PwmConfigV7((v6_rx_config_pwm_t *) &m_config.pwmChannels[ch]);
         }
     }
     #endif
+}
+
+// ========================================================
+
+// ========================================================
+// V8 Upgrade
+static void PwmConfigV7toV8(v6_rx_config_pwm_t * const old, rx_config_pwm_t * const current)
+{
+    // Version 7 used 10 bits:
+    // us output during failsafe +988 (e.g. 512 here would be 1500us).
+    constexpr unsigned SERVO_FAILSAFE_MIN = 988U;
+
+    // Version 8 uses 11 bits, so we can use a direct us output setting.
+    if (old->val.failsafe != 0) {
+        current->val.failsafe = old->val.failsafe + SERVO_FAILSAFE_MIN;
+    }
+}
+
+void RxConfig::UpgradeEepromV8()
+{
+    v7_rx_config_t v7Config;
+
+    // Populate the prev version struct from eeprom
+    m_eeprom->Get(0, v7Config);
+
+    if ((v7Config.version & ~CONFIG_MAGIC_MASK) != 7)
+        return;
+
+    // Manual field copying as some fields have moved
+    memcpy(m_config.uid, v7Config.uid, sizeof(v7Config.uid));
+    #define COPY(member) m_config.member = v7Config.member
+    COPY(vbatScale);
+    COPY(isBound);
+    COPY(onLoan);
+    COPY(power);
+    COPY(antennaMode);
+    COPY(powerOnCounter);
+    COPY(forceTlmOff);
+    COPY(rateInitialIdx);
+    COPY(modelId);
+    COPY(serialProtocol);
+    COPY(failsafeMode);
+    #undef LAZY
+
+    // PWM failsafe field width expanded in this version
+    for (unsigned ch=0; ch<16; ++ch) {
+        // Upgrade failsafe field width
+        PwmConfigV7toV8(&v7Config.pwmChannels[ch], &m_config.pwmChannels[ch]);
+    }
 }
 
 // ========================================================
@@ -969,9 +1019,10 @@ RxConfig::SetDefaults(bool commit)
         m_config.antennaMode = 0; // 0 is diversity for dual radio
 
 #if defined(GPIO_PIN_PWM_OUTPUTS)
-    for (unsigned int ch=0; ch<PWM_MAX_CHANNELS; ++ch)
-        SetPwmChannel(ch, 512, ch, false, 0, false);
-    SetPwmChannel(2, 0, 2, false, 0, false); // ch2 is throttle, failsafe it to 988
+    for (unsigned int ch=0; ch<PWM_MAX_CHANNELS; ++ch) {
+        SetPwmChannel(ch, 1500, ch, false, 0, false);
+    }
+    SetPwmChannel(2, 988, 2, false, 0, false); // ch2 is throttle, failsafe it to 988
 #endif
 
 #if defined(RCVR_INVERT_TX)

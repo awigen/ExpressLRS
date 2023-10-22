@@ -81,12 +81,11 @@ static void servoWrite(uint8_t ch, uint16_t us)
 
 static void servosFailsafe()
 {
-    constexpr unsigned SERVO_FAILSAFE_MIN = 988U;
     for (unsigned ch = 0 ; ch < GPIO_PIN_PWM_OUTPUTS_COUNT ; ++ch)
     {
         const rx_config_pwm_t *chConfig = config.GetPwmChannel(ch);
         // Note: Failsafe values do not respect the inverted flag, failsafe values are absolute
-        uint16_t us = chConfig->val.failsafe + SERVO_FAILSAFE_MIN;
+        uint16_t us = chConfig->val.failsafe;
         // Always write the failsafe position even if the servo has never been started,
         // so all the servos go to their expected position
         servoWrite(ch, us);
