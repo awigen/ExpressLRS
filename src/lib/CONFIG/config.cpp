@@ -728,6 +728,12 @@ void RxConfig::Load()
     if (version == RX_CONFIG_VERSION)
     {
         CheckUpdateFlashedUid(false);
+        DBGVLN("Limits:")
+        for (uint8_t i = 0; i < PWM_MAX_CHANNELS; i++)
+        {
+            const rx_config_pwm_limits_t *limits = GetPwmChannelLimits(i);
+            DBGVLN("Channel %d: %d - %d", i, limits->val.min, limits->val.max);
+        }
         return;
     }
 
@@ -1025,6 +1031,10 @@ void RxConfig::UpgradeEepromV9()
     for (unsigned ch=0; ch<16; ++ch) {
         // Upgrade failsafe field width
         PwmConfigV7toV8(&v7Config.pwmChannels[ch], &m_config.pwmChannels[ch]);
+
+        // PWM limits were introduced in v8, set sane defaults
+        m_config.pwmLimits[ch].val.min = 885; // allow extended range
+        m_config.pwmLimits[ch].val.max = 2135; // allow extended range
     }
 }
 
@@ -1152,6 +1162,7 @@ RxConfig::SetDefaults(bool commit)
             }
         }
         SetPwmChannel(ch, 1500, ch, false, mode, false);
+        SetPwmChannelLimits(ch, 885, 2135);
     }
     SetPwmChannel(2, 988, 2, false, 0, false); // ch2 is throttle, failsafe it to 988
 #endif
@@ -1212,6 +1223,42 @@ RxConfig::SetPwmChannelRaw(uint8_t ch, uint32_t raw)
         return;
 
     pwm->raw = raw;
+    m_modified = true;
+}
+
+void
+RxConfig::SetPwmChannelLimits(uint8_t ch, uint16_t min, uint16_t max)
+{
+    DBGLN("*** Store PWM limits ch %d min %d max %d", ch, min, max);
+    if (ch > PWM_MAX_CHANNELS)
+        return;
+    
+    rx_config_pwm_limits_t *limits = &m_config.pwmLimits[ch];
+    rx_config_pwm_limits_t new_limits;
+    new_limits.val.min = min;
+    new_limits.val.max = max;
+
+    if (limits->raw == new_limits.raw)
+        return;
+    
+    limits->raw = new_limits.raw;
+    m_modified = true;
+}
+
+void
+RxConfig::SetPwmChannelLimitsRaw(uint8_t ch, uint32_t raw)
+{
+    DBGLN("*** Store PWM limits");
+    if (ch > PWM_MAX_CHANNELS)
+        return;
+
+    rx_config_pwm_limits_t *pwm = &m_config.pwmLimits[ch];
+    if (pwm->raw == raw)
+        return;
+
+    pwm->raw = raw;
+    DBGLN("*** Stored new PWM Limits for channel %d: Min: %d Max: %d\n",
+          ch, (uint16_t) pwm->val.min, (uint16_t) pwm->val.max);
     m_modified = true;
 }
 #endif
