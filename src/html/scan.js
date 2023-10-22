@@ -26,6 +26,8 @@ function getPwmFormData() {
     const invert = _(`pwm_${ch}_inv`).checked ? 1 : 0;
     const narrow = _(`pwm_${ch}_nar`).checked ? 1 : 0;
     const failsafeField = _(`pwm_${ch}_fs`);
+    const limitMinField = _(`pwm_${ch}_limit_min`);
+    const limitMaxField = _(`pwm_${ch}_limit_max`);
     let failsafe = failsafeField.value;
     if (failsafe > 2135) failsafe = 2135;
     if (failsafe < 885) failsafe = 885;
@@ -34,6 +36,7 @@ function getPwmFormData() {
     const raw = (narrow << 20) | (mode << 16) | (invert << 15) | (inChannel << 11) | (failsafe);
     // console.log(`PWM ${ch} mode=${mode} input=${inChannel} fs=${failsafe} inv=${invert} nar=${narrow} raw=${raw}`);
     outData.push(raw);
+    outData.push(limitMinField.value << 16 | limitMaxField.value);
     ++ch;
   }
   return outData;
@@ -69,7 +72,7 @@ function updatePwmSettings(arPwm) {
   var pinTxIndex = undefined;
   var pinModes = []
   // arPwm is an array of raw integers [49664,50688,51200]. 11 bits of failsafe position, 4 bits of input channel, 1 bit invert, 4 bits mode, 1 bit for narrow/750us
-  const htmlFields = ['<div class="mui-panel"><table class="pwmtbl mui-table"><tr><th class="fixed-column">Output</th><th class="mui--text-center fixed-column">Features</th><th>Mode</th><th>Input</th><th class="mui--text-center fixed-column">Invert?</th><th class="mui--text-center fixed-column">750us?</th><th>Failsafe</th></tr>'];
+  const htmlFields = ['<div class="mui-panel"><table class="pwmtbl mui-table"><tr><th class="fixed-column">Output</th><th class="mui--text-center fixed-column">Features</th><th>Mode</th><th>Input</th><th class="mui--text-center fixed-column">Invert?</th><th class="mui--text-center fixed-column">750us?</th><th>Failsafe</th><th>Limit Min</th><th>Limit Max</th></tr>'];
   arPwm.forEach((item, index) => {
     const failsafe = (item.config & 2047); // 11 bits
     const ch = (item.config >> 11) & 15; // 4 bits
@@ -122,7 +125,10 @@ function updatePwmSettings(arPwm) {
             <td>${inputSelect}</td>
             <td><div class="mui-checkbox mui--text-center"><input type="checkbox" id="pwm_${index}_inv"${(inv) ? ' checked' : ''}></div></td>
             <td><div class="mui-checkbox mui--text-center"><input type="checkbox" id="pwm_${index}_nar"${(narrow) ? ' checked' : ''}></div></td>
-            <td><div class="mui-textfield compact"><input id="pwm_${index}_fs" value="${failsafe}" size="6"/></div></td></tr>`);
+            <td><div class="mui-textfield compact"><input id="pwm_${index}_fs" value="${failsafe}" size="6"/></div></td>
+            <td><div class="mui-textfield compact"><input id="pwm_${index}_limit_min" value="${item.limits.min}" size="6"/></div></td>
+            <td><div class="mui-textfield compact"><input id="pwm_${index}_limit_max" value="${item.limits.max}" size="6"/></div></td>
+            </tr>`);
     pinModes[index] = mode;
   });
   htmlFields.push('</table></div>');
@@ -138,6 +144,8 @@ function updatePwmSettings(arPwm) {
     _(`pwm_${index}_inv`).disabled = onoff;
     _(`pwm_${index}_nar`).disabled = onoff;
     _(`pwm_${index}_fs`).disabled = onoff;
+    _(`pwm_${index}_limit_min`).disabled = onoff;
+    _(`pwm_${index}_limit_max`).disabled = onoff;
   }
   arPwm.forEach((item,index)=>{
     const pinMode = _(`pwm_${index}_mode`)
