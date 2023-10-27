@@ -29,6 +29,8 @@ static const char *gyroInputChannelModes = "None;Roll;Pitch;Yaw;Mode;Gain";
 static const char *gyroOutputChannelModes = "None;Aileron;Elevator;Rudder;Elevon;V Tail";
 // Must match gyro.h gyro_mode_t
 static const char *gyroModes = "Off;Normal;SAFE;Hover;Rate;Level";
+// Must match gyro_axis_t
+static const char *gyroAxis = "Roll;Pitch;Yaw";
 #endif
 
 static struct luaItem_selection luaSerialProtocol = {
@@ -249,6 +251,91 @@ static void luaparamGyroModePos4(struct luaPropertiesCommon *item, uint8_t arg)
 { config.SetGyroModePos(3, (gyro_mode_t) arg); }
 static void luaparamGyroModePos5(struct luaPropertiesCommon *item, uint8_t arg)
 { config.SetGyroModePos(4, (gyro_mode_t) arg); }
+
+// contents of "Gyro Gains" folder, per axis subfolders
+static struct luaItem_selection luaGyroGainAxis = {
+    {"Gyro Axis", CRSF_TEXT_SELECTION},
+    0, // value
+    gyroAxis,
+    STR_EMPTYSPACE
+};
+
+static void luaparamGyroGainAxis(struct luaPropertiesCommon *item, uint8_t arg)
+{
+  setLuaTextSelectionValue(&luaGyroGainAxis, arg);
+  // Trigger reload of values for the selected channel
+  devicesTriggerEvent();
+}
+
+static struct luaItem_int8 luaGyroPIDRateP = {
+  {"P Rate", CRSF_UINT8},
+  {
+    {
+      (uint8_t)1,    // value
+      0,             // min
+      100            // max
+    }
+  },
+  STR_EMPTYSPACE
+};
+static struct luaItem_int8 luaGyroPIDRateI = {
+  {"I Rate", CRSF_UINT8},
+  {
+    {
+      (uint8_t)1,    // value
+      0,             // min
+      100            // max
+    }
+  },
+  STR_EMPTYSPACE
+};
+static struct luaItem_int8 luaGyroPIDRateD = {
+  {"D Rate", CRSF_UINT8},
+  {
+    {
+      (uint8_t)1,    // value
+      0,             // min
+      100            // max
+    }
+  },
+  STR_EMPTYSPACE
+};
+
+static struct luaItem_int8 luaGyroPIDGain = {
+  {"Axis Gain", CRSF_UINT8},
+  {
+    {
+      (uint8_t)1,    // value
+      0,             // min
+      255            // max
+    }
+  },
+  STR_EMPTYSPACE
+};
+
+static void luaparamGyroPIDRateP(struct luaPropertiesCommon *item, uint8_t arg)
+{
+  const gyro_axis_t axis = (gyro_axis_t) luaGyroGainAxis.value;
+  config.SetGyroPIDRate(axis, GYRO_RATE_VARIABLE_P, arg);
+}
+
+static void luaparamGyroPIDRateI(struct luaPropertiesCommon *item, uint8_t arg)
+{
+  const gyro_axis_t axis = (gyro_axis_t) luaGyroGainAxis.value;
+  config.SetGyroPIDRate(axis, GYRO_RATE_VARIABLE_I, arg);
+}
+
+static void luaparamGyroPIDRateD(struct luaPropertiesCommon *item, uint8_t arg)
+{
+  const gyro_axis_t axis = (gyro_axis_t) luaGyroGainAxis.value;
+  config.SetGyroPIDRate(axis, GYRO_RATE_VARIABLE_D, arg);
+}
+
+static void luaparamGyroPIDGain(struct luaPropertiesCommon *item, uint8_t arg)
+{
+  const gyro_axis_t axis = (gyro_axis_t) luaGyroGainAxis.value;
+  config.SetGyroPIDGain(axis, arg);
+}
 
 #endif // USE_GYRO
 
@@ -604,6 +691,11 @@ static void registerLuaParameters()
     registerLUAParameter(&luaGyroModePos5, &luaparamGyroModePos5, luaGyroModesFolder.common.id);
 
     registerLUAParameter(&luaGyroGainFolder);
+    registerLUAParameter(&luaGyroGainAxis, &luaparamGyroGainAxis, luaGyroGainFolder.common.id);
+    registerLUAParameter(&luaGyroPIDRateP, &luaparamGyroPIDRateP, luaGyroGainFolder.common.id);
+    registerLUAParameter(&luaGyroPIDRateI, &luaparamGyroPIDRateI, luaGyroGainFolder.common.id);
+    registerLUAParameter(&luaGyroPIDRateD, &luaparamGyroPIDRateD, luaGyroGainFolder.common.id);
+    registerLUAParameter(&luaGyroPIDGain, &luaparamGyroPIDGain, luaGyroGainFolder.common.id);
 
     registerLUAParameter(&luaGyroInputFolder);
     registerLUAParameter(&luaGyroInputChannel, &luaparamGyroInputChannel, luaGyroInputFolder.common.id);
@@ -669,6 +761,12 @@ static int event()
     setLuaTextSelectionValue(&luaGyroModePos3, gyroModes->val.pos3);
     setLuaTextSelectionValue(&luaGyroModePos4, gyroModes->val.pos4);
     setLuaTextSelectionValue(&luaGyroModePos5, gyroModes->val.pos5);
+
+    const rx_config_gyro_gains_t *gyroGains = config.GetGyroGains((gyro_axis_t) (luaGyroGainAxis.value));
+    setLuaUint8Value(&luaGyroPIDRateP, gyroGains->p);
+    setLuaUint8Value(&luaGyroPIDRateI, gyroGains->i);
+    setLuaUint8Value(&luaGyroPIDRateD, gyroGains->d);
+    setLuaUint8Value(&luaGyroPIDGain, gyroGains->gain);
     #endif // HAS_GYRO
   }
 #endif

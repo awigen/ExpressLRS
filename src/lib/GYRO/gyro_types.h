@@ -21,6 +21,20 @@ typedef enum {
     FN_IN_GYRO_GAIN
 } gyro_input_channel_function_t;
 
+#define GYRO_N_AXES 3
+
+typedef enum {
+    GYRO_AXIS_ROLL,
+    GYRO_AXIS_PITCH,
+    GYRO_AXIS_YAW
+} gyro_axis_t;
+
+typedef enum {
+    GYRO_RATE_VARIABLE_P,
+    GYRO_RATE_VARIABLE_I,
+    GYRO_RATE_VARIABLE_D
+} gyro_rate_variable_t;
+
 typedef enum {
     FN_NONE,
     FN_AILERON,
@@ -31,10 +45,10 @@ typedef enum {
 } gyro_output_channel_function_t;
 
 typedef struct {
-    float p;
-    float i;
-    float d;
-    float gain;
+    uint8_t p;
+    uint8_t i;
+    uint8_t d;
+    uint8_t gain;
 } rx_config_gyro_gains_t;
 
 typedef struct {

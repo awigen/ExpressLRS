@@ -16,32 +16,14 @@
 
 #define PI_180 0.0174532925199
 
-const float kP_ail = 2.00;       // Proportional gain
-const float kI_ail = 0.00;       // Integral gain
-const float kD_ail = 0.00;       // Derivative gain
-
-const float kP_ele = 2.00;       // Proportional gain
-const float kI_ele = 0.00;       // Integral gain
-const float kD_ele = 0.00;       // Derivative gain
-
-const float kP_yaw = 0.01;       // Proportional gain
-const float kI_yaw = 0.00;       // Integral gain
-const float kD_yaw = 0.00;       // Derivative gain
-
 const float max_angle_roll = 30 * PI_180; // Convert degrees to radians
 const float max_angle_pitch= 30 * PI_180; // Convert degrees to radians
 
 void safe_controller_initialize()
 {
     // Set limits to two to be able to fully override a full stick input command
-    pid_roll.configure(kP_ail, kI_ail, kD_ail, 2.0, -2.0);
-    pid_roll.reset();
-    pid_pitch.configure(kP_ele, kI_ele, kD_ele, 2.0, -2.0);
-    pid_pitch.reset();
-
-    // For yaw we use standard angular rate
-    pid_yaw.configure(kP_yaw, kI_yaw, kD_yaw, 1.0, -1.0);
-    pid_yaw.reset();
+    // on roll and pitch axes
+    configure_pids(2.0, 2.0, 1.0);
 }
 
 void _calculate_pid(PID *pid, float angle, float max_angle)

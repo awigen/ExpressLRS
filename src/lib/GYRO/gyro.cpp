@@ -265,4 +265,37 @@ void Gyro::tick()
     #endif
 }
 
+void configure_pids(float roll_limit, float pitch_limit, float yaw_limit)
+{
+    const rx_config_gyro_gains_t *roll_gains =
+        config.GetGyroGains(GYRO_AXIS_ROLL);
+    const rx_config_gyro_gains_t *pitch_gains =
+        config.GetGyroGains(GYRO_AXIS_PITCH);
+    const rx_config_gyro_gains_t *yaw_gains =
+        config.GetGyroGains(GYRO_AXIS_YAW);
+
+    configure_pid_gains(&pid_roll, roll_gains, roll_limit, -1.0 * roll_limit);
+    configure_pid_gains(&pid_pitch, pitch_gains, pitch_limit,
+                        -1.0 * pitch_limit);
+    configure_pid_gains(&pid_yaw, yaw_gains, yaw_limit, -1.0 * yaw_limit);
+}
+
+void configure_pid_gains(PID *pid, const rx_config_gyro_gains_t *gains,
+                         float max, float min)
+{
+    DBGLN("Config gains: P %d I %d D %d G %d", gains->p, gains->i, gains->d, gains->gain)
+    if (max == 0.0 && min == 0.0) {
+        // not gyro correction on this axis
+        pid->configure(0.0, 0.0, 0.0, 0.0, 0.0);
+    } else {
+        float p = gains->gain * gains->p / 10000.0;
+        float i = gains->gain * gains->i / 10000.0;
+        float d = gains->gain * gains->d / 10000.0;
+        DBGLN("PID gains: P %f I %f D %f", p, i, d)
+
+        pid->configure(p, i, d, max, min);
+    }
+    pid->reset();
+}
+
 #endif

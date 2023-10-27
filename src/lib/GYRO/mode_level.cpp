@@ -18,24 +18,12 @@
  *
  */
 
-const float kP_ail = 100.00;       // Proportional gain
-const float kI_ail = 0.00;       // Integral gain
-const float kD_ail = 0.00;       // Derivative gain
-const float maxRate_ail = 90.0;  // Max roll rate in deg/s
-
-const float kP_ele = 50.0;       // Proportional gain
-const float kI_ele = 0.00;       // Integral gain
-const float kD_ele = 0.00;       // Derivative gain
-
 const float max_angle_roll = 0.5;
 const float max_angle_pitch= 0.5;
 
 void level_controller_initialize()
 {
-    pid_roll.configure(kP_ail, kI_ail, kD_ail, 1.0, -1.0);
-    pid_roll.reset();
-    pid_pitch.configure(kP_ele, kI_ele, kD_ele, 1.0, -1.0);
-    pid_pitch.reset();
+    configure_pids(1.0, 1.0, 1.0);
 }
 
 void level_controller_calculate_pid()
@@ -48,7 +36,7 @@ void level_controller_calculate_pid()
             pid_roll.calculate(
                 // FIXME: ChannelData[config.GetPwmChannel(ch)->val.inputChannel
                 // newPwmCh.val.failsafe = CRSF_to_UINT10(
-                // constrain(ChannelData[config.GetPwmChannel(ch)->val.inputChannel], 
+                // constrain(ChannelData[config.GetPwmChannel(ch)->val.inputChannel],
                 //           CRSF_CHANNEL_VALUE_MIN, CRSF_CHANNEL_VALUE_MAX));
                 // new function:
                 // CRSF_to_FLOAT(ChannelData[i])

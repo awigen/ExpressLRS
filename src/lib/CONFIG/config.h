@@ -17,7 +17,6 @@
 #define RX_CONFIG_MAGIC     (0b10U << 30)
 
 #define TX_CONFIG_VERSION   7U
-#define RX_CONFIG_VERSION   9U
 #if defined(HAS_GYRO)
 // This will force a wipe of the EEPROM for our new config structure
 #define RX_CONFIG_VERSION   10U
@@ -230,6 +229,7 @@ typedef struct {
     rx_config_gyro_channel_t gyroChannels[PWM_MAX_CHANNELS];
     rx_config_gyro_timings_t gyroTimings[PWM_MAX_CHANNELS];
     rx_config_gyro_mode_pos_t gyroModes; // Gyro functions for switch positions
+    rx_config_gyro_gains_t gyroGains[GYRO_N_AXES]; // PID gains for each axis
     #endif
 } rx_config_t;
 
@@ -262,6 +262,7 @@ public:
     gyro_output_channel_function_t GetGyroChannelOutputMode(uint8_t ch) { return ( gyro_output_channel_function_t) m_config.gyroChannels[ch].val.output_mode; }
     const bool GetGyroChannelOutputInverted(uint8_t ch) { return m_config.gyroChannels[ch].val.inverted; }
     const rx_config_gyro_timings_t *GetGyroChannelTimings(uint8_t ch) const { return &m_config.gyroTimings[ch]; }
+    const rx_config_gyro_gains_t *GetGyroGains(gyro_axis_t axis) const { return &m_config.gyroGains[axis]; }
 
     const rx_config_gyro_mode_pos_t *GetGyroModePos() const { return &m_config.gyroModes;}
     const int8_t GetGyroInputChannelNumber(gyro_input_channel_function_t mode);
@@ -292,6 +293,8 @@ public:
     void SetGyroChannel(uint8_t ch, uint8_t input_mode, uint8_t output_mode, bool inverted);
     void SetGyroChannelRaw(uint8_t ch, uint32_t raw);
     void SetGyroModePos(uint8_t pos, gyro_mode_t mode);
+    void SetGyroPIDRate(gyro_axis_t axis, gyro_rate_variable_t var, uint8_t value);
+    void SetGyroPIDGain(gyro_axis_t axis, uint8_t value);
     #endif
     #endif
     void SetForceTlmOff(bool forceTlmOff);

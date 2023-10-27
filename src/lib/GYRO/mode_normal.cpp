@@ -17,27 +17,9 @@
  * angular rates.
 */
 
-// PID controller values
-const float kP_roll = 0.01;  // Proportional gain
-const float kI_roll = 0.00;  // Integral gain
-const float kD_roll = 0.00;  // Derivative gain
-
-const float kP_pitch = 0.01; // Proportional gain
-const float kI_pitch = 0.00; // Integral gain
-const float kD_pitch = 0.00; // Derivative gain
-
-const float kP_yaw = 0.01;   // Proportional gain
-const float kI_yaw = 0.00;   // Integral gain
-const float kD_yaw = 0.00;   // Derivative gain
-
 void normal_controller_initialize()
 {
-    pid_roll.configure(kP_roll, kI_roll, kD_roll, 1.0, -1.0);
-    pid_roll.reset();
-    pid_pitch.configure(kP_pitch, kI_pitch, kD_pitch, 1.0, -1.0);
-    pid_pitch.reset();
-    pid_yaw.configure(kP_yaw, kI_yaw, kD_yaw, 1.0, -1.0);
-    pid_yaw.reset();
+    configure_pids(1.0, 1.0, 1.0);
 }
 
 void normal_controller_calculate_pid()
