@@ -60,4 +60,11 @@ private:
 
 extern Gyro gyro;
 
+// configure PID controllers from LUA gains for each axis with the specified limit
+// (typically 1.0). Set a limit to 0.0 to disable PID control on an axis.
+void configure_pids(float roll_limit, float pitch_limit, float yaw_limit);
+
+// Helper method to congiure a PID controller instance use the rx config values
+void configure_pid_gains(PID* pid, const rx_config_gyro_gains_t* gains, float max, float min);
+
 #endif

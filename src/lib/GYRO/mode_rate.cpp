@@ -9,29 +9,13 @@
 #include "gyro_types.h"
 
 // PID controller values
-const float kP_ail = 0.01;       // Proportional gain
-const float kI_ail = 0.00;       // Integral gain
-const float kD_ail = 0.00;       // Derivative gain
 const float maxRate_ail = 90.0;  // Max roll rate in deg/s
-
-const float kP_ele = 0.01;       // Proportional gain
-const float kI_ele = 0.00;       // Integral gain
-const float kD_ele = 0.00;       // Derivative gain
 const float maxRate_ele = 90.0;  // Max pitch rate in deg/s
-
-const float kP_yaw = 0.10;       // Proportional gain
-const float kI_yaw = 0.00;       // Integral gain
-const float kD_yaw = 0.00;       // Derivative gain
 const float maxRate_yaw = 90.0;  // Max pitch rate in deg/s
 
 void rate_controller_initialize()
 {
-    pid_roll.configure(kP_ail, kI_ail, kD_ail, 1.0, -1.0);
-    pid_roll.reset();
-    pid_pitch.configure(kP_ele, kI_ele, kD_ele, 1.0, -1.0);
-    pid_pitch.reset();
-    pid_yaw.configure(kP_yaw, kI_yaw, kD_yaw, 1.0, -1.0);
-    pid_yaw.reset();
+    configure_pids(1.0, 1.0, 1.0);
 }
 
 void rate_controller_calculate_pid()

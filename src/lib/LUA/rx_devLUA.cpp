@@ -250,6 +250,102 @@ static void luaparamGyroModePos4(struct luaPropertiesCommon *item, uint8_t arg)
 static void luaparamGyroModePos5(struct luaPropertiesCommon *item, uint8_t arg)
 { config.SetGyroModePos(4, (gyro_mode_t) arg); }
 
+// contents of "Gyro Gains" folder, per axis subfolders
+static struct luaItem_folder luaGyroGainRollFolder = {
+    {"Roll Axis", CRSF_FOLDER},
+};
+static struct luaItem_folder luaGyroGainPitchFolder = {
+    {"Pitch Axis", CRSF_FOLDER},
+};
+static struct luaItem_folder luaGyroGainYawFolder = {
+    {"Yaw Axis", CRSF_FOLDER},
+};
+
+static struct luaItem_int8 luaGyroPIDRateP = {
+  {"P Rate (hundredths)", CRSF_UINT8},
+  {
+    {
+      (uint8_t)1,    // value
+      0,             // min
+      100            // max
+    }
+  },
+  STR_EMPTYSPACE
+};
+static struct luaItem_int8 luaGyroPIDRateI = {
+  {"I Rate (hundredths)", CRSF_UINT8},
+  {
+    {
+      (uint8_t)1,    // value
+      0,             // min
+      100            // max
+    }
+  },
+  STR_EMPTYSPACE
+};
+static struct luaItem_int8 luaGyroPIDRateD = {
+  {"D Rate (hundredths)", CRSF_UINT8},
+  {
+    {
+      (uint8_t)1,    // value
+      0,             // min
+      100            // max
+    }
+  },
+  STR_EMPTYSPACE
+};
+
+static struct luaItem_int8 luaGyroPIDGain = {
+  {"Axis Gain", CRSF_UINT8},
+  {
+    {
+      (uint8_t)1,    // value
+      0,             // min
+      255            // max
+    }
+  },
+  STR_EMPTYSPACE
+};
+
+// roll axis config
+static void luaparamGyroPIDRollRateP(struct luaPropertiesCommon *item, uint8_t arg)
+{ config.SetGyroPIDRate(GYRO_AXIS_ROLL, GYRO_RATE_VARIABLE_P, arg); }
+
+static void luaparamGyroPIDRollRateI(struct luaPropertiesCommon *item, uint8_t arg)
+{ config.SetGyroPIDRate(GYRO_AXIS_ROLL, GYRO_RATE_VARIABLE_I, arg); }
+
+static void luaparamGyroPIDRollRateD(struct luaPropertiesCommon *item, uint8_t arg)
+{ config.SetGyroPIDRate(GYRO_AXIS_ROLL, GYRO_RATE_VARIABLE_D, arg); }
+
+static void luaparamGyroPIDRollGain(struct luaPropertiesCommon *item, uint8_t arg)
+{ config.SetGyroPIDGain(GYRO_AXIS_ROLL, arg); }
+
+// pitch axis config
+static void luaparamGyroPIDPitchRateP(struct luaPropertiesCommon *item, uint8_t arg)
+{ config.SetGyroPIDRate(GYRO_AXIS_PITCH, GYRO_RATE_VARIABLE_P, arg); }
+
+static void luaparamGyroPIDPitchRateI(struct luaPropertiesCommon *item, uint8_t arg)
+{ config.SetGyroPIDRate(GYRO_AXIS_PITCH, GYRO_RATE_VARIABLE_I, arg); }
+
+static void luaparamGyroPIDPitchRateD(struct luaPropertiesCommon *item, uint8_t arg)
+{ config.SetGyroPIDRate(GYRO_AXIS_PITCH, GYRO_RATE_VARIABLE_D, arg); }
+
+static void luaparamGyroPIDPitchGain(struct luaPropertiesCommon *item, uint8_t arg)
+{ config.SetGyroPIDGain(GYRO_AXIS_PITCH, arg); }
+
+// yaw axis config
+static void luaparamGyroPIDYawRateP(struct luaPropertiesCommon *item, uint8_t arg)
+{ config.SetGyroPIDRate(GYRO_AXIS_YAW, GYRO_RATE_VARIABLE_P, arg); }
+
+static void luaparamGyroPIDYawRateI(struct luaPropertiesCommon *item, uint8_t arg)
+{ config.SetGyroPIDRate(GYRO_AXIS_YAW, GYRO_RATE_VARIABLE_I, arg); }
+
+static void luaparamGyroPIDYawRateD(struct luaPropertiesCommon *item, uint8_t arg)
+{ config.SetGyroPIDRate(GYRO_AXIS_YAW, GYRO_RATE_VARIABLE_D, arg); }
+
+static void luaparamGyroPIDYawGain(struct luaPropertiesCommon *item, uint8_t arg)
+{ config.SetGyroPIDGain(GYRO_AXIS_YAW, arg); }
+
 #endif // USE_GYRO
 
 // --------------------------- Gyro Setup ---------------------------------
@@ -605,6 +701,21 @@ static void registerLuaParameters()
     registerLUAParameter(&luaGyroModePos5, &luaparamGyroModePos5, luaGyroModesFolder.common.id);
 
     registerLUAParameter(&luaGyroGainFolder);
+    registerLUAParameter(&luaGyroGainRollFolder, nullptr, luaGyroGainFolder.common.id);
+    registerLUAParameter(&luaGyroGainPitchFolder, nullptr, luaGyroGainFolder.common.id);
+    registerLUAParameter(&luaGyroGainYawFolder, nullptr, luaGyroGainFolder.common.id);
+    registerLUAParameter(&luaGyroPIDRateP, &luaparamGyroPIDRollRateP, luaGyroGainRollFolder.common.id);
+    registerLUAParameter(&luaGyroPIDRateI, &luaparamGyroPIDRollRateI, luaGyroGainRollFolder.common.id);
+    registerLUAParameter(&luaGyroPIDRateD, &luaparamGyroPIDRollRateD, luaGyroGainRollFolder.common.id);
+    registerLUAParameter(&luaGyroPIDGain, &luaparamGyroPIDRollGain, luaGyroGainRollFolder.common.id);
+    registerLUAParameter(&luaGyroPIDRateP, &luaparamGyroPIDPitchRateP, luaGyroGainPitchFolder.common.id);
+    registerLUAParameter(&luaGyroPIDRateI, &luaparamGyroPIDPitchRateI, luaGyroGainPitchFolder.common.id);
+    registerLUAParameter(&luaGyroPIDRateD, &luaparamGyroPIDPitchRateD, luaGyroGainPitchFolder.common.id);
+    registerLUAParameter(&luaGyroPIDGain, &luaparamGyroPIDPitchGain, luaGyroGainPitchFolder.common.id);
+    registerLUAParameter(&luaGyroPIDRateP, &luaparamGyroPIDYawRateP, luaGyroGainYawFolder.common.id);
+    registerLUAParameter(&luaGyroPIDRateI, &luaparamGyroPIDYawRateI, luaGyroGainYawFolder.common.id);
+    registerLUAParameter(&luaGyroPIDRateD, &luaparamGyroPIDYawRateD, luaGyroGainYawFolder.common.id);
+    registerLUAParameter(&luaGyroPIDGain, &luaparamGyroPIDYawGain, luaGyroGainYawFolder.common.id);
 
     registerLUAParameter(&luaGyroInputFolder);
     registerLUAParameter(&luaGyroInputChannel, &luaparamGyroInputChannel, luaGyroInputFolder.common.id);

@@ -1167,6 +1167,58 @@ const int8_t RxConfig::GetGyroOutputChannelNumber(gyro_output_channel_function_t
             return i;
     return -1;
 }
+
+void
+RxConfig::SetGyroPIDRate(gyro_axis_t axis, gyro_rate_variable_t var, uint8_t new_value)
+{
+    rx_config_gyro_gains_t *config = &m_config.gyroGains[axis];
+
+    uint8_t old_value = 0;
+    switch (var)
+    {
+    case GYRO_RATE_VARIABLE_P:
+        old_value = config->p;
+        break;
+    case GYRO_RATE_VARIABLE_I:
+        old_value = config->i;
+        break;
+    case GYRO_RATE_VARIABLE_D:
+        old_value = config->d;
+        break;
+    }
+
+    if (new_value == old_value)
+        return;
+
+    switch (var)
+    {
+    case GYRO_RATE_VARIABLE_P:
+        config->p = new_value;
+        break;
+    case GYRO_RATE_VARIABLE_I:
+        config->i = new_value;
+        break;
+    case GYRO_RATE_VARIABLE_D:
+        config->d = new_value;
+        break;
+    }
+
+    m_modified = true;
+    debugGyroConfiguration();
+}
+
+void
+RxConfig::SetGyroPIDGain(gyro_axis_t axis, uint8_t new_value)
+{
+    rx_config_gyro_gains_t *config = &m_config.gyroGains[axis];
+
+    if (config->gain == new_value)
+        return;
+
+    config->gain = new_value;
+    m_modified = true;
+    debugGyroConfiguration();
+}
 #endif // HAS_GYRO
 
 void
@@ -1209,7 +1261,7 @@ RxConfig::SetPwmChannelLimits(uint8_t ch, uint16_t min, uint16_t max)
     DBGLN("*** Store PWM limits ch %d min %d max %d", ch, min, max)
     if (ch > PWM_MAX_CHANNELS)
         return;
-    
+
     rx_config_pwm_limits_t *limits = &m_config.pwmLimits[ch];
     rx_config_pwm_limits_t new_limits;
     new_limits.val.min = min;
@@ -1217,7 +1269,7 @@ RxConfig::SetPwmChannelLimits(uint8_t ch, uint16_t min, uint16_t max)
 
     if (limits->raw == new_limits.raw)
         return;
-    
+
     limits->raw = new_limits.raw;
     m_modified = true;
 }
