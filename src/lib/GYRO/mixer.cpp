@@ -5,24 +5,15 @@
 #include "targets.h"
 #include "logging.h"
 
-#define GYRO_SUBTRIM_INIT_SAMPLES 3
+#define GYRO_SUBTRIM_INIT_SAMPLES 10
 uint8_t subtrim_init = 0;
 
 // Channel configuration for minimum, subtrim and maximum us values. If no
 // values are specified we default to full range and autodetection of midpoint.
-uint16_t ch_us[GYRO_MAX_CHANNELS][3] = {
-    // {GYRO_US_MIN, GYRO_US_MID, GYRO_US_MAX}
-    // {GYRO_US_MIN, 0, GYRO_US_MAX} <- autodetect midpoint
-};
-
-#define CH_US_MIN 0
-#define CH_US_MID 1
-#define CH_US_MAX 2
+uint16_t midpoint[GYRO_MAX_CHANNELS] = {};
 
 bool ch_map_auto_subtrim[GYRO_MAX_CHANNELS] = {};
-
-// Last known channel values
-uint16_t ch_values[GYRO_MAX_CHANNELS];
+bool auto_subtrim_complete = false;
 
 bool mixer_initialize()
 {
@@ -32,59 +23,46 @@ bool mixer_initialize()
     {
         // Note that if we have no channel configuration all values start at
         // zero, in that case apply defaults.
-        if (ch_us[i][1] == 0) {
-            ch_us[i][1] = GYRO_US_MID;
+        if (midpoint[i] == 0) {
+            midpoint[i] = GYRO_US_MID;
             ch_map_auto_subtrim[i] = true;
         }
-        if (ch_us[i][0] < GYRO_US_MIN)
-            ch_us[i][0] = GYRO_US_MIN;
-        if (ch_us[i][2] < GYRO_US_MIN || ch_us[i][2] > GYRO_US_MAX)
-            ch_us[i][2] = GYRO_US_MAX;
-
-        // Sanity checks, if the fail we will refuse to run the gyro at all
-        if (
-            ch_us[i][0] < GYRO_US_MIN ||
-            ch_us[i][0] > GYRO_US_MAX ||
-            ch_us[i][2] < GYRO_US_MIN ||
-            ch_us[i][2] > GYRO_US_MAX ||
-            ch_us[i][0] > ch_us[i][2] ||
-            ch_us[i][0] + 10 > ch_us[i][1] ||
-            ch_us[i][2] - 10 < ch_us[i][1]
-        ) {
-            DBGLN("Gyro configuration invalid, channel %d: %d %d %d",
-                i, ch_us[i][0], ch_us[i][1], ch_us[i][2]
-            )
-            valid = false;
-        }
     }
-
-    /*
-    DBGLN("MIXER MAP:")
-    for (uint8_t i = 0; i < GYRO_MAX_CHANNELS; i++)
-    {
-        DBGLN("Channel %d: %d %d %d", i, ch_us[i][0], ch_us[i][1], ch_us[i][2])
-    }
-    */
 
     return valid;
 }
 
+void auto_subtrim(uint8_t ch, uint16_t us)
+{
+    // Set midpoint (subtrim) from an average of a set of samples
+    gyro_input_channel_function_t channel = config.GetGyroChannelInputMode(ch);
+    switch (channel)
+    {
+    case FN_IN_ROLL:
+    case FN_IN_PITCH:
+    case FN_IN_YAW:
+        if (ch_map_auto_subtrim[ch] && subtrim_init < GYRO_SUBTRIM_INIT_SAMPLES) {
+            midpoint[ch] = (((midpoint[ch] * subtrim_init) / subtrim_init) + us) / 2;
+        }
+        break;
+
+    default:
+        break;
+    }
+}
+
 void mixer_channel_update(uint8_t ch, uint16_t us)
 {
-    // We only track channels in our input map
-    if (config.GetGyroChannelInputMode(ch) == FN_IN_NONE) return;
-
-    // TODO: Subtrim autodetection
-    // Set midpoint (subtrim) from an average of a set of samples
-    /*
-    if (ch == 0) subtrim_init++;
-    if (ch_map_auto_subtrim[ch] && subtrim_init < GYRO_SUBTRIM_INIT_SAMPLES) {
-        ch_us[ch][1] = ((ch_us[ch][1] * subtrim_init) + us) / subtrim_init + 1;
-        DBGLN("LOOP %d CH %d %d", subtrim_init, ch, ch_us[ch][1])
-    }*/
-
-    // Store current commanded value for use in the PID loop
-    ch_values[ch] = us;
+    if (!auto_subtrim_complete) {
+        if (ch == 0 && ++subtrim_init > GYRO_SUBTRIM_INIT_SAMPLES) {
+            auto_subtrim_complete = true;
+            for (unsigned i = 0; i < GYRO_MAX_CHANNELS; i++) {
+                DBGLN("Subtrim channel %d: %d", i, midpoint[i])
+            }
+        } else {
+            auto_subtrim(ch, us);
+        }
+    }
 }
 
 /**
@@ -99,23 +77,43 @@ float us_command_to_float(uint16_t us)
 }
 
 /**
- * Convert +-1.0 float into us
+ * Convert a channel µs value to a float command
+ *
+ * This takes into account subtrim and max throws.
+ */
+float us_command_to_float(uint8_t ch, uint16_t us)
+{
+    // TODO: inverted matters?
+    const rx_config_pwm_limits_t *limits = config.GetPwmChannelLimits(ch);
+    const uint16_t mid = ch_map_auto_subtrim[ch] ? midpoint[ch] : GYRO_US_MID;
+    return us <= mid
+        ? float(us - mid) / (mid - limits->val.min)
+        : float(us - mid) / (limits->val.max - mid);
+}
+
+/**
+ * Convert +-1.0 float into µs
  */
 uint16_t float_to_us(float value)
 {
-    // TODO: this will take into account subtrim and max throws
     if (value < 0)
         return GYRO_US_MID + ((GYRO_US_MID - GYRO_US_MIN) * value);
     return GYRO_US_MID + ((GYRO_US_MAX - GYRO_US_MID) * value);
 }
 
 /**
- * Convert +-1.0 float into us for an output channel
+ * Convert +-1.0 float into µs for an output channel
+ *
+ * This takes into account subtrim and max throws.
  */
-uint16_t float_to_us(uint16_t ch, float value)
+uint16_t float_to_us(uint8_t ch, float value)
 {
+    const rx_config_pwm_limits_t *limits = config.GetPwmChannelLimits(ch);
+    const uint16_t mid = ch_map_auto_subtrim[ch] ? midpoint[ch] : GYRO_US_MID;
+
+    // if (value < 0 && !config.GetPwmChannelInverted(ch))
     if (value < 0)
-        return ch_us[ch][CH_US_MID] + ((ch_us[ch][CH_US_MID] - ch_us[ch][CH_US_MIN]) * value);
-    return ch_us[ch][CH_US_MID] + ((ch_us[ch][CH_US_MAX] - ch_us[ch][CH_US_MID]) * value);
+        return mid + ((mid - limits->val.min) * value);
+    return mid + ((limits->val.max - mid) * value);
 }
 #endif

@@ -8,8 +8,6 @@
 
 #define GYRO_DEV_MPU6050
 
-#define GYRO_DEADBAND 2
-
 #define GYRO_US_MIN 988
 #define GYRO_US_MID 1500
 #define GYRO_US_MAX 2012
@@ -31,7 +29,7 @@ public:
 
     GyroDevice *dev;
 
-    float gain = 500;
+    float gain = 1.0;
 // protected:
 
     // orientation/motion vars

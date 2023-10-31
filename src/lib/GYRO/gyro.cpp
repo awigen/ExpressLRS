@@ -60,6 +60,11 @@ void Gyro::switch_mode(gyro_mode_t mode)
         level_controller_initialize();
         break;
 
+    case GYRO_MODE_LAUNCH:
+        // TODO: Make launch angle configurable
+        level_controller_initialize(0.2); // 20% up elevator
+        break;
+
     case GYRO_MODE_SAFE:
         safe_controller_initialize();
         break;
@@ -109,36 +114,36 @@ void Gyro::mixer(uint8_t ch, uint16_t *us)
     if (output_mode == FN_NONE)
         return;
 
-    uint16_t new_us = *us;
+    // Normalize the µs value to a +-1.0 keeping in mind subtrim and max throws
+    float command = us_command_to_float(ch, *us);
     float correction = 0.0;
+
     switch (gyro_mode)
     {
     case GYRO_MODE_NORMAL:
-        correction = normal_controller_out(output_mode, *us);
+        correction = normal_controller_out(output_mode, command);
         break;
 
     case GYRO_MODE_RATE:
-        correction = rate_controller_out(output_mode, *us);
+        correction = rate_controller_out(output_mode, command);
         break;
 
     case GYRO_MODE_LEVEL:
-        correction = level_controller_out(output_mode, *us);
+    case GYRO_MODE_LAUNCH:
+        correction = level_controller_out(output_mode, command);
         break;
 
     case GYRO_MODE_SAFE:
-        correction = safe_controller_out(output_mode, *us);
+        correction = safe_controller_out(output_mode, command);
         break;
 
     case GYRO_MODE_HOVER:
-        correction = hover_controller_out(output_mode, *us);
+        correction = hover_controller_out(output_mode, command);
         break;
 
     default:
         return;
     }
-
-    if (correction == 0.0)
-        return;
 
     // If the channel is inverted, also invert the correction
     if (config.GetPwmChannelInverted(ch))
@@ -148,18 +153,30 @@ void Gyro::mixer(uint8_t ch, uint16_t *us)
     if (config.GetGyroChannelOutputInverted(ch))
         correction *= -1;
 
-    // Gyro gain modulation
-    correction *= gain;
+    switch (gyro_mode)
+    {
+    case GYRO_MODE_NORMAL:
+    case GYRO_MODE_RATE:
+    case GYRO_MODE_HOVER:
+        // Limit correction as set from gain input channel
+        correction *= gyro.gain;
 
-    // float command = us_command_to_float(*us);
+        // Modulate the correction depending on how much axis stick command
+        correction *= 1 - fabs(command);
+        break;
 
-    new_us = float_to_us(ch, correction);
-
-    if (abs(*us - new_us) <= GYRO_DEADBAND)
+    case GYRO_MODE_LEVEL:
+    case GYRO_MODE_LAUNCH:
+        // In this mode, the correction is the command
+        *us = float_to_us(ch, correction);
         return;
+    case GYRO_MODE_SAFE:
+        // In this mode we do not allow the correction to be limited
+    default: ;
+    }
 
-    // Limit min and max µS values is done in servo outputs now
-    *us = new_us;
+    // Limit of min and max µS values is done in devServoOutput
+    *us = float_to_us(ch, command + correction);
 }
 
 static int16_t decidegrees2Radians10000(int16_t angle_decidegree)
@@ -234,6 +251,7 @@ void Gyro::tick()
         break;
 
     case GYRO_MODE_LEVEL:
+    case GYRO_MODE_LAUNCH:
         level_controller_calculate_pid();
         break;
 
@@ -288,9 +306,9 @@ void configure_pid_gains(PID *pid, const rx_config_gyro_gains_t *gains,
         // not gyro correction on this axis
         pid->configure(0.0, 0.0, 0.0, 0.0, 0.0);
     } else {
-        float p = gains->gain * gains->p / 10000.0;
-        float i = gains->gain * gains->i / 10000.0;
-        float d = gains->gain * gains->d / 10000.0;
+        float p = gains->gain * gains->p / 1000.0;
+        float i = gains->gain * gains->i / 1000.0;
+        float d = gains->gain * gains->d / 1000.0;
         DBGLN("PID gains: P %f I %f D %f", p, i, d)
 
         pid->configure(p, i, d, max, min);

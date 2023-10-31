@@ -19,63 +19,54 @@
  */
 
 const float max_angle_roll = 0.5;
-const float max_angle_pitch= 0.5;
+const float max_angle_pitch = 0.5;
+float pitch_offset = 0.0;
 
-void level_controller_initialize()
+void level_controller_initialize(float pitch)
 {
+    pitch_offset = pitch;
     configure_pids(1.0, 1.0, 1.0);
+}
+
+float channel_command(uint8_t ch)
+{
+    return us_command_to_float(ch, CRSF_to_US(ChannelData[ch]));
 }
 
 void level_controller_calculate_pid()
 {
-    for (uint8_t i = 0; i < GYRO_MAX_CHANNELS; i++)
-    {
-        const rx_config_gyro_channel_t *channel = config.GetGyroChannel(i);
-        gyro_input_channel_function_t input_mode = (gyro_input_channel_function_t) channel->val.input_mode;
-        if (input_mode == FN_IN_ROLL) {
-            pid_roll.calculate(
-                // FIXME: ChannelData[config.GetPwmChannel(ch)->val.inputChannel
-                // newPwmCh.val.failsafe = CRSF_to_UINT10(
-                // constrain(ChannelData[config.GetPwmChannel(ch)->val.inputChannel],
-                //           CRSF_CHANNEL_VALUE_MIN, CRSF_CHANNEL_VALUE_MAX));
-                // new function:
-                // CRSF_to_FLOAT(ChannelData[i])
-                us_command_to_float(CRSF_to_UINT10(ChannelData[i])) * max_angle_roll,
-                // us_command_to_float(ch_values[i]) * max_angle_roll,
-                gyro.gravity.y / 90
-            );
-            break;
-        }
+    int8_t channel = config.GetGyroInputChannelNumber(FN_IN_ROLL);
+    if (channel != -1) {
+        pid_roll.calculate(
+            channel_command(channel) * max_angle_roll,
+            gyro.gravity.y
+        );
     }
 
-    for (uint8_t i = 0; i < GYRO_MAX_CHANNELS; i++)
-    {
-        const rx_config_gyro_channel_t *channel = config.GetGyroChannel(i);
-        gyro_input_channel_function_t input_mode = (gyro_input_channel_function_t) channel->val.input_mode;
-        if (input_mode == FN_IN_PITCH) {
-            pid_pitch.calculate(
-                us_command_to_float(ch_values[i]) * max_angle_pitch,
-                gyro.gravity.x / 90
-            );
-            break;
-        }
+    channel = config.GetGyroInputChannelNumber(FN_IN_PITCH);
+    if (channel != -1) {
+        pid_pitch.calculate(
+            constrain(channel_command(channel) - pitch_offset, -1.0, 1.0) * max_angle_pitch,
+            -gyro.gravity.x
+        );
+            // channel_command(channel) * max_angle_pitch,
+            // pitch_offset - gyro.gravity.x
     }
+
+    pid_yaw.calculate(0, -gyro.f_gyro[2]);
 }
 
 float level_controller_out(
     gyro_output_channel_function_t channel_function,
-    uint16_t us
+    float command
 ) {
-    float command = us_command_to_float(us);
-    float correction = 0.0;
-
     if (channel_function == FN_AILERON)
-        correction = pid_roll.output;
+        return pid_roll.output;
     else if (channel_function == FN_ELEVATOR)
-        correction = pid_pitch.output;
+        return pid_pitch.output;
+    else if (channel_function == FN_RUDDER)
+        return pid_yaw.output;
 
-    correction *= gyro.gain;
-
-    return command + correction;
+    return 0.0;
 }
 #endif

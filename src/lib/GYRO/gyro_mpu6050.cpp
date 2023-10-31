@@ -6,7 +6,7 @@
 
 #define I2C_MASTER_FREQ_HZ 400000
 
-#define gscale ((250. / 32768.0)) // gyro default 250 LSB per d/s
+#define gscale ((250. / 32768.0) / 100) // gyro default 250 LSB per d/s
 
 // MPU control/status vars
 bool dmpReady = false;    // set true if DMP init was successful

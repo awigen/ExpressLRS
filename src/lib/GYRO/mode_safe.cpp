@@ -17,7 +17,7 @@
 #define PI_180 0.0174532925199
 
 const float max_angle_roll = 30 * PI_180; // Convert degrees to radians
-const float max_angle_pitch= 30 * PI_180; // Convert degrees to radians
+const float max_angle_pitch = 30 * PI_180; // Convert degrees to radians
 
 void safe_controller_initialize()
 {
@@ -39,27 +39,30 @@ void _calculate_pid(PID *pid, float angle, float max_angle)
 void safe_controller_calculate_pid()
 {
     _calculate_pid(&pid_roll, gyro.ypr[2], max_angle_roll);
-    _calculate_pid(&pid_pitch, gyro.ypr[1], max_angle_pitch);
+    _calculate_pid(&pid_pitch, -gyro.ypr[1], max_angle_pitch);
 
-    pid_yaw.calculate(0, gyro.f_gyro[2]);
+    pid_yaw.calculate(0, -gyro.f_gyro[2]);
 }
 
 float safe_controller_out(
     gyro_output_channel_function_t channel_function,
-    uint16_t us
+    float command
 ) {
-    float command = us_command_to_float(us);
-    float correction = 0.0;
+    // TODO: Invert elevator if craft is inverted
+    // TODO: Modulate elevator and rudder when needed (knife edge nose down)
+    switch (channel_function)
+    {
+    case FN_AILERON:
+        return pid_roll.output;
 
-    if (channel_function == FN_AILERON)
-        correction = pid_roll.output;
-    else if (channel_function == FN_ELEVATOR)
-        correction = pid_pitch.output;
-    else if (channel_function == FN_RUDDER)
-        correction = pid_yaw.output;
+    case FN_ELEVATOR:
+        return pid_pitch.output;
 
-    correction *= gyro.gain;
+    case FN_RUDDER:
+        return pid_yaw.output;
 
-    return command + correction;
+    default: ;
+    }
+    return 0.0;
 }
 #endif

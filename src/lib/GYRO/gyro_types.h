@@ -10,6 +10,7 @@ typedef enum
     GYRO_MODE_HOVER,
     GYRO_MODE_RATE,
     GYRO_MODE_LEVEL,
+    GYRO_MODE_LAUNCH,
 } gyro_mode_t;
 
 typedef enum {

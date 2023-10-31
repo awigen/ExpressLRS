@@ -2,6 +2,7 @@
 #include "targets.h"
 #include "elrs_eeprom.h"
 #include "config.h"
+#include "crsf_protocol.h"
 #include "mode_rate.h"
 #include "gyro.h"
 #include "pid.h"
@@ -23,39 +24,42 @@ void rate_controller_calculate_pid()
     int8_t channel = config.GetGyroInputChannelNumber(FN_IN_ROLL);
     if (channel > -1)
         pid_roll.calculate(
-            us_command_to_float(ch_values[channel]) * maxRate_ail,
+            us_command_to_float(channel, CRSF_to_UINT10(ChannelData[channel])) * maxRate_ail,
             gyro.f_gyro[0]
         );
 
     channel = config.GetGyroInputChannelNumber(FN_IN_PITCH);
     if (channel > -1)
         pid_pitch.calculate(
-            us_command_to_float(ch_values[channel]) * maxRate_ele,
+            us_command_to_float(channel, CRSF_to_UINT10(ChannelData[channel])) * maxRate_ele,
             gyro.f_gyro[1]
         );
 
     channel = config.GetGyroInputChannelNumber(FN_IN_YAW);
     if (channel > -1)
         pid_yaw.calculate(
-            us_command_to_float(ch_values[channel]) * maxRate_yaw,
+            us_command_to_float(channel, CRSF_to_UINT10(ChannelData[channel])) * maxRate_yaw,
             gyro.f_gyro[2]
         );
 }
 
 float rate_controller_out(
     gyro_output_channel_function_t channel_function,
-    uint16_t us
+    float command
 ) {
-
-    if (channel_function == FN_AILERON) {
+    switch (channel_function)
+    {
+    case FN_AILERON:
         return pid_roll.output;
-    }
-    else if (channel_function == FN_ELEVATOR) {
+
+    case FN_ELEVATOR:
         return pid_pitch.output;
-    }
-    else if (channel_function == FN_RUDDER) {
+
+    case FN_RUDDER:
         return pid_yaw.output;
+
+    default: ;
     }
-    return us_command_to_float(us);
+    return 0.0;
 }
 #endif

@@ -28,7 +28,7 @@ static const char *gyroInputChannelModes = "None;Roll;Pitch;Yaw;Mode;Gain";
 // Must match mixer.h: gyro_output_channel_function_t
 static const char *gyroOutputChannelModes = "None;Aileron;Elevator;Rudder;Elevon;V Tail";
 // Must match gyro.h gyro_mode_t
-static const char *gyroModes = "Off;Normal;SAFE;Hover;Rate;Level";
+static const char *gyroModes = "Off;Normal;SAFE;Hover;Rate;Level;Launch";
 // Must match gyro_axis_t
 static const char *gyroAxis = "Roll;Pitch;Yaw";
 #endif

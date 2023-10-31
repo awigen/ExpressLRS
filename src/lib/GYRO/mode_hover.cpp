@@ -24,37 +24,27 @@ void hover_controller_initialize() {}
 
 float hover_controller_out(
     gyro_output_channel_function_t channel_function,
-    uint16_t us
+    float command
 )
 {
-    float command = us_command_to_float(us);
-    float correction = 0.0;
-    float error = 0.0;
+    if (channel_function != FN_ELEVATOR && channel_function != FN_RUDDER)
+        return 0.0;
 
-    if (channel_function == FN_ELEVATOR || channel_function == FN_RUDDER)
-    {
-        error = gyro.ypr[1] - 1.5708;
-    } else {
-        return command;
-    }
+    float correction = 0.0;
+    float error = gyro.ypr[1] - M_PI_2; // Pi/2 = 90degrees
 
     switch (channel_function)
     {
     case FN_ELEVATOR:
-        correction = error * cos(gyro.ypr[2]);
-        break;
+        return error * cos(gyro.ypr[2]);
 
     case FN_RUDDER:
-        correction = error * sin(gyro.ypr[2]);
-        break;
+        return error * sin(gyro.ypr[2]);
 
-    default:
-        break;
+    default: ;
     }
 
-    correction *= gyro.gain;
-
-    return command + correction;
+    return correction;
 }
 
 void hover_controller_calculate_pid()

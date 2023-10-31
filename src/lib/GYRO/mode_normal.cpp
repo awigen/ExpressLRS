@@ -24,39 +24,29 @@ void normal_controller_initialize()
 
 void normal_controller_calculate_pid()
 {
+    // Desired angular rate is zero
     pid_roll.calculate(0, gyro.f_gyro[0]);
     pid_pitch.calculate(0, gyro.f_gyro[1]);
-    pid_yaw.calculate(0, gyro.f_gyro[2]);
+    pid_yaw.calculate(0, -gyro.f_gyro[2]);
 }
 
 float normal_controller_out(
     gyro_output_channel_function_t channel_function,
-    uint16_t us
+    float command
 ) {
-    float command = us_command_to_float(us);
-    float correction = 0.0;
-
     switch (channel_function)
     {
     case FN_AILERON:
-        correction = pid_roll.output;
-        break;
+        return pid_roll.output;
 
     case FN_ELEVATOR:
-        correction = pid_pitch.output;
-        break;
+        return pid_pitch.output;
 
     case FN_RUDDER:
-        correction = pid_yaw.output;
-        break;
+        return pid_yaw.output;
 
-    default:
-        break;
+    default: ;
     }
-
-    correction *= gyro.gain;
-    correction *= 1 - fabs(command);
-
-    return command + correction;
+    return 0.0;
 }
 #endif
