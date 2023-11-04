@@ -23,4 +23,8 @@ public:
     float Iout;
     float Dout;
     unsigned long t_delta;
+
+    /* Derivative low-pass filter time constant */
+    float tau;
+    float prevMeasurement;
 };

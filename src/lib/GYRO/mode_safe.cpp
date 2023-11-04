@@ -38,8 +38,8 @@ void _calculate_pid(PID *pid, float angle, float max_angle)
 
 void safe_controller_calculate_pid()
 {
-    _calculate_pid(&pid_roll, gyro.ypr[2], max_angle_roll);
-    _calculate_pid(&pid_pitch, -gyro.ypr[1], max_angle_pitch);
+    _calculate_pid(&pid_pitch, -gyro.ypr[1], config.GetGyroSAFEPitch() * PI_180);
+    _calculate_pid(&pid_roll, gyro.ypr[2], config.GetGyroSAFERoll() * PI_180);
 
     pid_yaw.calculate(0, -gyro.f_gyro[2]);
 }

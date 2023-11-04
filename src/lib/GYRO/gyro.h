@@ -12,11 +12,23 @@
 #define GYRO_US_MID 1500
 #define GYRO_US_MAX 2012
 
+/**
+ * Add some servo jitter feedback to the pilot after the gyro has initialized.
+ */
+#define GYRO_BOOT_JITTER
+#ifdef GYRO_BOOT_JITTER
+#define GYRO_BOOT_JITTER_US 45
+#define GYRO_BOOT_JITTER_MS 175
+#define GYRO_BOOT_JITTER_TIMES 4
+#endif
+
 class GyroDevice;
 
 extern PID pid_roll;
 extern PID pid_pitch;
 extern PID pid_yaw;
+
+extern volatile gyro_event_t gyro_event;
 
 class Gyro
 {
@@ -26,6 +38,8 @@ public:
     void send_telemetry();
     bool read_device();
     void tick();
+    void calibrate();
+    void reload();
 
     GyroDevice *dev;
 

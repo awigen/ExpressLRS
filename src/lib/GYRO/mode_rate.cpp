@@ -1,46 +1,33 @@
 #if defined(HAS_GYRO)
-#include "targets.h"
-#include "elrs_eeprom.h"
-#include "config.h"
-#include "crsf_protocol.h"
 #include "mode_rate.h"
 #include "gyro.h"
-#include "pid.h"
-#include "logging.h"
-#include "gyro_types.h"
 
-// PID controller values
-const float maxRate_ail = 90.0;  // Max roll rate in deg/s
-const float maxRate_ele = 90.0;  // Max pitch rate in deg/s
-const float maxRate_yaw = 90.0;  // Max pitch rate in deg/s
+/**
+ * Airplane Normal Mode / Rate Mode
+ *
+ * This is a basic "wind rejection mode" and counteracts roll and pitch changes.
+ *
+ * As the channel command increases the correction decreases allowing unlimited
+ * angular rates.
+ */
 
 void rate_controller_initialize()
 {
     configure_pids(1.0, 1.0, 1.0);
+
+    // For rate mode we have a basic derivative from the gyro which is the
+    // angular velocity. Therefor we turn of any derivitive term.
+    // pid_pitch._Kd = 0;
+    // pid_roll._Kd = 0;
+    // pid_yaw._Kd = 0;
 }
 
 void rate_controller_calculate_pid()
 {
-    int8_t channel = config.GetGyroInputChannelNumber(FN_IN_ROLL);
-    if (channel > -1)
-        pid_roll.calculate(
-            us_command_to_float(channel, CRSF_to_UINT10(ChannelData[channel])) * maxRate_ail,
-            gyro.f_gyro[0]
-        );
-
-    channel = config.GetGyroInputChannelNumber(FN_IN_PITCH);
-    if (channel > -1)
-        pid_pitch.calculate(
-            us_command_to_float(channel, CRSF_to_UINT10(ChannelData[channel])) * maxRate_ele,
-            gyro.f_gyro[1]
-        );
-
-    channel = config.GetGyroInputChannelNumber(FN_IN_YAW);
-    if (channel > -1)
-        pid_yaw.calculate(
-            us_command_to_float(channel, CRSF_to_UINT10(ChannelData[channel])) * maxRate_yaw,
-            gyro.f_gyro[2]
-        );
+    // Desired angular rate is zero
+    pid_roll.calculate(0, gyro.f_gyro[0]);
+    pid_pitch.calculate(0, gyro.f_gyro[1]);
+    pid_yaw.calculate(0, -gyro.f_gyro[2]);
 }
 
 float rate_controller_out(

@@ -7,7 +7,6 @@
 #include "mixer.h"
 #include "device.h"
 #include "gyro_mpu6050.h"
-#include "mode_normal.h"
 #include "mode_level.h"
 #include "mode_hover.h"
 #include "mode_rate.h"
@@ -21,6 +20,39 @@ extern Telemetry telemetry;
 PID pid_roll  = PID(1, -1, 0.0, 0.0, 0.0);
 PID pid_pitch = PID(1, -1, 0.0, 0.0, 0.0);
 PID pid_yaw   = PID(1, -1, 0.0, 0.0, 0.0);
+
+#ifdef GYRO_BOOT_JITTER
+uint8_t boot_jitter_times = 0;
+uint32_t boot_jitter_time = 0;
+int8_t boot_jitter_offset = GYRO_BOOT_JITTER_US;
+
+bool boot_jitter(uint16_t *us)
+{
+    if (boot_jitter_times > GYRO_BOOT_JITTER_TIMES)
+        return false;
+
+    if ((millis() - boot_jitter_time) > GYRO_BOOT_JITTER_MS)
+    {
+        boot_jitter_times++;
+        boot_jitter_time = millis();
+        boot_jitter_offset *= -1;
+    }
+
+    *us = *us + boot_jitter_offset;
+    return true;
+}
+#endif
+
+volatile gyro_event_t gyro_event = GYRO_EVENT_NONE;
+
+void Gyro::calibrate()
+{
+    dev->calibrate();
+    #ifdef GYRO_BOOT_JITTER
+    boot_jitter_times = 0;
+    boot_jitter_time = 0;
+    #endif
+}
 
 void Gyro::detect_mode(uint16_t us)
 {
@@ -42,16 +74,20 @@ void Gyro::detect_mode(uint16_t us)
         switch_mode(selected_mode);
 }
 
+/**
+ * Trigger a gyro re-initialization of the current gyro mode
+*/
+void Gyro::reload()
+{
+    gyro_mode = GYRO_MODE_OFF;
+}
+
 void Gyro::switch_mode(gyro_mode_t mode)
 {
     DBGLN("Gyro: Switching mode to %d", mode);
     gyro_mode = mode;
     switch (mode)
     {
-    case GYRO_MODE_NORMAL:
-        normal_controller_initialize();
-        break;
-
     case GYRO_MODE_RATE:
         rate_controller_initialize();
         break;
@@ -61,8 +97,7 @@ void Gyro::switch_mode(gyro_mode_t mode)
         break;
 
     case GYRO_MODE_LAUNCH:
-        // TODO: Make launch angle configurable
-        level_controller_initialize(0.2); // 20% up elevator
+        level_controller_initialize(config.GetGyroLaunchAngle());
         break;
 
     case GYRO_MODE_SAFE:
@@ -99,6 +134,11 @@ void Gyro::mixer(uint8_t ch, uint16_t *us)
     if (input_mode == FN_IN_NONE && output_mode == FN_NONE)
         return;
 
+    #ifdef GYRO_BOOT_JITTER
+    if (boot_jitter(us))
+        return;
+    #endif
+
     switch (input_mode)
     {
     case FN_IN_GYRO_MODE:
@@ -120,10 +160,6 @@ void Gyro::mixer(uint8_t ch, uint16_t *us)
 
     switch (gyro_mode)
     {
-    case GYRO_MODE_NORMAL:
-        correction = normal_controller_out(output_mode, command);
-        break;
-
     case GYRO_MODE_RATE:
         correction = rate_controller_out(output_mode, command);
         break;
@@ -155,7 +191,6 @@ void Gyro::mixer(uint8_t ch, uint16_t *us)
 
     switch (gyro_mode)
     {
-    case GYRO_MODE_NORMAL:
     case GYRO_MODE_RATE:
     case GYRO_MODE_HOVER:
         // Limit correction as set from gain input channel
@@ -229,8 +264,8 @@ unsigned long gyro_debug_time = 0;
 
 #ifdef GYRO_PID_DEBUG_TIME
 void _make_gyro_debug_string(PID *pid, char *str) {
-    sprintf(str, "Setpoint: %5.2f PV: %5.2f I:%5.2f Error: %5.2f Out: %5.2f",
-        pid->setpoint, pid->pv, pid->Iout, pid->error, pid->output);
+    sprintf(str, "Setpoint: %5.2f PV: %5.2f I:%5.2f D:%5.2f Error: %5.2f Out: %5.2f",
+        pid->setpoint, pid->pv, pid->Iout, pid->Dout, pid->error, pid->output);
 
 }
 #endif
@@ -242,10 +277,6 @@ void Gyro::tick()
 
     switch (gyro_mode)
     {
-    case GYRO_MODE_NORMAL:
-        normal_controller_calculate_pid();
-        break;
-
     case GYRO_MODE_RATE:
         rate_controller_calculate_pid();
         break;

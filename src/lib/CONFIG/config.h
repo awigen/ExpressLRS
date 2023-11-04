@@ -230,6 +230,16 @@ typedef struct {
     rx_config_gyro_timings_t gyroTimings[PWM_MAX_CHANNELS];
     rx_config_gyro_mode_pos_t gyroModes; // Gyro functions for switch positions
     rx_config_gyro_gains_t gyroGains[GYRO_N_AXES]; // PID gains for each axis
+    rx_config_gyro_calibration_t accelCalibration;
+    rx_config_gyro_calibration_t gyroCalibration;
+    uint8_t gyroSensorAlignment:4,
+            calibrateGyro:1,
+            gyroUnused:3;
+    uint8_t gyroLaunchAngle;
+    uint8_t gyroSAFEPitch;
+    uint8_t gyroSAFERoll;
+    uint8_t gyroLevelPitch;
+    uint8_t gyroLevelRoll;
     #endif
 } rx_config_t;
 
@@ -267,6 +277,15 @@ public:
     const rx_config_gyro_mode_pos_t *GetGyroModePos() const { return &m_config.gyroModes;}
     const int8_t GetGyroInputChannelNumber(gyro_input_channel_function_t mode);
     const int8_t GetGyroOutputChannelNumber(gyro_output_channel_function_t mode);
+    const gyro_sensor_align_t GetGyroSensorAlignment() const { return (gyro_sensor_align_t) m_config.gyroSensorAlignment; }
+    const bool GetCalibrateGyro() const { return m_config.calibrateGyro; }
+    const rx_config_gyro_calibration_t *GetAccelCalibration() const { return &m_config.accelCalibration; }
+    const rx_config_gyro_calibration_t *GetGyroCalibration() const { return &m_config.gyroCalibration; }
+    const uint8_t GetGyroLaunchAngle() const { return m_config.gyroLaunchAngle; }
+    const uint8_t GetGyroSAFEPitch() const { return m_config.gyroSAFEPitch; }
+    const uint8_t GetGyroSAFERoll() const { return m_config.gyroSAFERoll; }
+    const uint8_t GetGyroLevelPitch() const { return m_config.gyroLevelPitch; }
+    const uint8_t GetGyroLevelRoll() const { return m_config.gyroLevelRoll; }
     #endif
     bool GetForceTlmOff() const { return m_config.forceTlmOff; }
     uint8_t GetRateInitialIdx() const { return m_config.rateInitialIdx; }
@@ -295,6 +314,15 @@ public:
     void SetGyroModePos(uint8_t pos, gyro_mode_t mode);
     void SetGyroPIDRate(gyro_axis_t axis, gyro_rate_variable_t var, uint8_t value);
     void SetGyroPIDGain(gyro_axis_t axis, uint8_t value);
+    void SetGyroSensorAlignment(gyro_sensor_align_t);
+    void SetCalibrateGyro(bool);
+    void SetAccelCalibration(uint16_t, uint16_t, uint16_t);
+    void SetGyroCalibration(uint16_t, uint16_t, uint16_t);
+    void SetGyroLaunchAngle(uint8_t);
+    void SetGyroSAFEPitch(uint8_t);
+    void SetGyroSAFERoll(uint8_t);
+    void SetGyroLevelPitch(uint8_t);
+    void SetGyroLevelRoll(uint8_t);
     #endif
     #endif
     void SetForceTlmOff(bool forceTlmOff);

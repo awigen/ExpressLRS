@@ -12,7 +12,9 @@ PID::PID(float max, float min, float Kp, float Ki, float Kd)
       _integral(0),
       setpoint(0),
       pv(0),
-      output(0)
+      output(0),
+      tau(0),
+      prevMeasurement(0)
 {
 }
 
@@ -20,9 +22,10 @@ void PID::configure(float Kp, float Ki, float Kd, float max, float min)
 {
     _Kp = Kp;
     _Ki = Ki;
-    _Kd = Kd;
+    _Kd = Kd * 10;
     _max = max;
     _min = min;
+    tau = 0.02;
 }
 
 void PID::reset()
@@ -32,6 +35,7 @@ void PID::reset()
     setpoint = 0;
     pv = 0;
     output = 0;
+    Dout = 0;
 }
 
 float PID::calculate(float _setpoint, float _pv)
@@ -65,9 +69,11 @@ float PID::calculate(float _setpoint, float _pv)
     Iout = _Ki * _integral;
 
     // Derivative term
-    float derivative = (current_error - error) / _dt;
-    Dout = _Kd * derivative;
 
+    Dout = -(2.0f * _Kd * (pv - prevMeasurement)	/* Note: derivative on measurement, therefore minus sign in front of equation! */
+           + (2.0f * tau - t_delta) * Dout)
+           / (2.0f * tau + t_delta);
+    prevMeasurement = pv;
     // Calculate total output
     output = Pout + Iout + Dout;
 

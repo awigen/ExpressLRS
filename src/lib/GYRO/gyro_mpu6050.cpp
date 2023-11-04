@@ -3,6 +3,7 @@
 #include "gyro_mpu6050.h"
 #include "MPU6050_6Axis_MotionApps612.h"
 #include "logging.h"
+#include "config.h"
 
 #define I2C_MASTER_FREQ_HZ 400000
 
@@ -40,6 +41,10 @@ void GyroDevMPU6050::print_gyro_stats()
     char gyro_y[8]; sprintf(gyro_y, "%6.2f", gyro.v_gyro.y);
     char gyro_z[8]; sprintf(gyro_z, "%6.2f", gyro.v_gyro.z);
 
+    char gravity_x[8]; sprintf(gravity_x, "%4.2f", gyro.gravity.x);
+    char gravity_y[8]; sprintf(gravity_y, "%4.2f", gyro.gravity.y);
+    char gravity_z[8]; sprintf(gravity_z, "%4.2f", gyro.gravity.z);
+
     char debug_line[128];
     sprintf(debug_line,
         "Pitch: %.2f Roll: %.2f Yaw: %.2f"
@@ -52,17 +57,17 @@ void GyroDevMPU6050::print_gyro_stats()
         // "%s HZ "
         "Gain %f "
         "Pitch:%s Roll:%s Yaw:%s "
-        "e1: %f, e2: %f, e3: %f "
+        // "e1: %f, e2: %f, e3: %f "
         "Qw: %f Qx: %f Qy: %f Qz: %f "
         // "Gyro x: %s Gyro y: %s Gyro z: %s "
-        // "Grav x: %f Grav y: %f Grav z: %f "
+        "Gravity gX: %s gY: %s gZ: %s "
         // ,rate_str
         , gyro.gain
         ,pitch_str, roll_str, yaw_str
-        ,gyro.euler[0], gyro.euler[1], gyro.euler[2]
+        // ,gyro.euler[0], gyro.euler[1], gyro.euler[2]
         ,gyro.q.w, gyro.q.x, gyro.q.y, gyro.q.z
         // ,gyro_x, gyro_y, gyro_z
-        // ,gyro.gravity.x, gyro.gravity.y, gyro.gravity.z
+        ,gravity_x, gravity_y, gravity_z
         );
 
     last_gyro_stats_time = millis();
@@ -75,9 +80,52 @@ void GyroDevMPU6050::initialize() {
     Wire.setClock(I2C_MASTER_FREQ_HZ);
 }
 
-uint8_t GyroDevMPU6050::start() {
+void GyroDevMPU6050::calibrate()
+{
+    mpu.reset();
+    vTaskDelay(50 * portTICK_PERIOD_MS);
+
+    mpu.setFullScaleGyroRange(MPU6050_GYRO_FS_2000);
+    mpu.setMasterClockSpeed(13); // 400kHz
+    mpu.setRate(0);              // Max rate?
+
+    // INT_PIN_CFG
+    mpu.setInterruptMode(0);         // INT_LEVEL_HIGH
+    mpu.setInterruptDrive(0);        // INT_OPEN_DIS (push-pull)
+    mpu.setInterruptLatch(0);        // LATCH_INT_DIS (50us)
+    mpu.setInterruptLatchClear(0);   // INT_RD_CLEAR_DIS (read-only)
+    mpu.setFSyncInterruptLevel(0);   // FSYNC_INT_LEVEL_HIGH (active-high)
+    mpu.setFSyncInterruptEnabled(0); // FSYNC_INT_DIS
+    mpu.setI2CBypassEnabled(1);      // I2C_BYPASS_EN
+    mpu.setClockOutputEnabled(0);    // CLOCK_DIS
+    mpu.setExternalFrameSync(0);
+
+    mpu.dmpInitialize();
+
+    // Run the calibration
+    mpu.CalibrateAccel(8);
+    mpu.CalibrateGyro(8);
+
+    // Store the calibration offsets
+    config.SetAccelCalibration(
+        mpu.getXAccelOffset(),
+        mpu.getYAccelOffset(),
+        mpu.getZAccelOffset()
+    );
+    config.SetGyroCalibration(
+        mpu.getXGyroOffset(),
+        mpu.getYGyroOffset(),
+        mpu.getZGyroOffset()
+    );
+
+    start(false);
+}
+
+uint8_t GyroDevMPU6050::start(bool calibrate) {
     DBGLN("Initialize_mpu");
-    vTaskDelay(500);
+    mpu.reset();
+    vTaskDelay(50 * portTICK_PERIOD_MS);
+
     mpu.initialize();
     mpu.setFullScaleGyroRange(MPU6050_GYRO_FS_2000);
     mpu.setMasterClockSpeed(13); // 400kHz
@@ -94,17 +142,19 @@ uint8_t GyroDevMPU6050::start() {
     mpu.setClockOutputEnabled(0);    // CLOCK_DIS
 
     mpu.setExternalFrameSync(0);
-    vTaskDelay(500);
-    DBGLN("Initialize DMP");
     mpu.dmpInitialize();
-    DBGLN("Initialized_mpu");
 
-    mpu.CalibrateAccel(6);
-    mpu.CalibrateGyro(6);
-    DBGLN("mpu calibrated");
+    const rx_config_gyro_calibration_t *offsets;
+    offsets = config.GetAccelCalibration();
+    mpu.setXAccelOffset(offsets->x);
+    mpu.setYAccelOffset(offsets->y);
+    mpu.setZAccelOffset(offsets->z);
+    offsets = config.GetGyroCalibration();
+    mpu.setXGyroOffset(offsets->x);
+    mpu.setYGyroOffset(offsets->y);
+    mpu.setZGyroOffset(offsets->z);
 
     mpu.setDMPEnabled(true);
-    DBGLN("DMP enabled");
 
     return DURATION_IMMEDIATELY; // Call timeout() immediately
 }
@@ -153,10 +203,56 @@ bool GyroDevMPU6050::read() {
             return DURATION_IMMEDIATELY;
 
         mpu.dmpGetGyro(&gyro.v_gyro, fifoBuffer);
-        gyro.f_gyro[0] = gyro.v_gyro.x * gscale;
-        gyro.f_gyro[1] = gyro.v_gyro.y * gscale;
-        gyro.f_gyro[2] = gyro.v_gyro.z * gscale;
-        mpu.dmpGetQuaternion(&gyro.q, fifoBuffer);
+        mpu.dmpGetQuaternion(&gyro.q, fifoBuffer); // [w, x, y, z] quaternion container
+
+        const gyro_sensor_align_t alignment = config.GetGyroSensorAlignment();
+        if (alignment != GYRO_ALIGN_CW0_DEG)
+        {
+            Quaternion v_rotation(0, 0, 0, 0);
+            Quaternion q_rotation(0, 0, 0, 0);
+
+            switch (alignment)
+            {
+            case GYRO_ALIGN_CW90_DEG:
+                q_rotation.w = 0.7071;
+                q_rotation.z = 0.7071;
+                v_rotation.w = 0.7071;
+                v_rotation.z = 0.7071;
+                break;
+
+            case GYRO_ALIGN_CW180_DEG:
+                q_rotation.z = 1;
+                v_rotation.z = 1;
+                break;
+
+            case GYRO_ALIGN_CW270_DEG:
+                q_rotation.w = 0.7071;
+                q_rotation.z = -0.7071;
+                v_rotation.w = 0.7071;
+                v_rotation.z = -0.7071;
+                break;
+
+            case GYRO_ALIGN_CW0_DEG_FLIP:
+                v_rotation.x = 1;
+                q_rotation.x = 1;
+                break;
+
+            case GYRO_ALIGN_CW180_DEG_FLIP:
+                // TODO
+            case GYRO_ALIGN_CW90_DEG_FLIP:
+                // TODO
+            case GYRO_ALIGN_CW270_DEG_FLIP:
+                // TODO
+            default: ;
+            }
+
+            gyro.v_gyro = gyro.v_gyro.getRotated(&v_rotation);
+            gyro.q = gyro.q.getProduct(q_rotation);
+        }
+
+        gyro.f_gyro[0] = gyro.v_gyro.x * gscale; // Roll
+        gyro.f_gyro[1] = gyro.v_gyro.y * gscale; // Pitch
+        gyro.f_gyro[2] = gyro.v_gyro.z * gscale; // Yaw
         mpu.dmpGetEuler(gyro.euler, &gyro.q);
         mpu.dmpGetGravity(&gyro.gravity, &gyro.q);
         dmpGetYawPitchRoll(gyro.ypr, &gyro.q, &gyro.gravity);

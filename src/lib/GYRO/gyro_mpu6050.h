@@ -10,10 +10,11 @@ class Gyro;
 class GyroDevice
 {
     public:
-        virtual void initialize() = 0;
-        virtual uint8_t start() = 0;
-        virtual uint8_t event() = 0;
+        virtual void initialize();
+        virtual uint8_t start(bool calibrate);
+        virtual uint8_t event();
         virtual bool read();
+        virtual void calibrate();
 };
 
 class GyroDevMPU6050 : public GyroDevice
@@ -21,9 +22,10 @@ class GyroDevMPU6050 : public GyroDevice
     using GyroDevice::GyroDevice;
     public:
         void initialize();
-        uint8_t start();
+        uint8_t start(bool calibrate);
         uint8_t event();
         bool read();
+        void calibrate();
     private:
         void dmpGetYawPitchRoll(float *data, Quaternion *q, VectorFloat *gravity);
         #ifdef GYRO_STATS

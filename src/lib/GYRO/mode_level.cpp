@@ -11,26 +11,32 @@
 #include "gyro_types.h"
 
 /**
- * Airplane Stable Mode
+ * Airplane Level/Stable Mode
  *
  * This mode tries to keep the plane flying level (pitch/roll) when there is no
  * stick input.
  *
  */
 
-const float max_angle_roll = 0.5;
-const float max_angle_pitch = 0.5;
 float pitch_offset = 0.0;
 
-void level_controller_initialize(float pitch)
+#define degToRad(angleInDegrees) ((angleInDegrees) * M_PI / 180.0)
+
+void level_controller_initialize(float offset)
 {
-    pitch_offset = pitch;
+    pitch_offset = offset;
     configure_pids(1.0, 1.0, 1.0);
 }
 
 float channel_command(uint8_t ch)
 {
-    return us_command_to_float(ch, CRSF_to_US(ChannelData[ch]));
+    // devServoOutput inputs already inverted values to our mixer
+    // When accessing ChannelData[] we need to apply inversion
+    const rx_config_pwm_t *chConfig = config.GetPwmChannel(ch);
+    const unsigned crsfVal = ChannelData[chConfig->val.inputChannel];
+    uint16_t us = CRSF_to_US(crsfVal);
+    if (chConfig->val.inverted) us = 3000U - us;
+    return us_command_to_float(ch, us);
 }
 
 void level_controller_calculate_pid()
@@ -38,19 +44,19 @@ void level_controller_calculate_pid()
     int8_t channel = config.GetGyroInputChannelNumber(FN_IN_ROLL);
     if (channel != -1) {
         pid_roll.calculate(
-            channel_command(channel) * max_angle_roll,
-            gyro.gravity.y
+            channel_command(channel) * degToRad(config.GetGyroLevelRoll()),
+            gyro.ypr[2]
         );
     }
 
     channel = config.GetGyroInputChannelNumber(FN_IN_PITCH);
     if (channel != -1) {
         pid_pitch.calculate(
-            constrain(channel_command(channel) - pitch_offset, -1.0, 1.0) * max_angle_pitch,
-            -gyro.gravity.x
+                channel_command(channel) * degToRad(config.GetGyroLevelPitch()),
+                // For the pitch access in launch mode (pitch_offset != 0)
+                // we change what the PID controllers sees as level
+                degToRad(pitch_offset) - gyro.ypr[1]
         );
-            // channel_command(channel) * max_angle_pitch,
-            // pitch_offset - gyro.gravity.x
     }
 
     pid_yaw.calculate(0, -gyro.f_gyro[2]);
@@ -65,7 +71,9 @@ float level_controller_out(
     else if (channel_function == FN_ELEVATOR)
         return pid_pitch.output;
     else if (channel_function == FN_RUDDER)
-        return pid_yaw.output;
+        // Because the calling gyro fuctions will not add command to the output
+        // of the level controller, we have to add it ourselves here.
+        return pid_yaw.output + command;
 
     return 0.0;
 }

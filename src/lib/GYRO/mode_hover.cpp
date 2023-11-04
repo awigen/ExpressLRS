@@ -1,9 +1,6 @@
 #if defined(HAS_GYRO)
-#include "targets.h"
 #include "mode_hover.h"
-#include "device.h"
 #include "gyro.h"
-#include "mixer.h"
 
 /**
  * Airplane Hover Mode
