@@ -180,6 +180,8 @@ void TxConfig::Load()
         // backpackdisable was actually added after 7, but if not found will default to 0 (enabled)
         if (nvs_get_u8(handle, "backpackdisable", &value8) == ESP_OK)
             m_config.backpackDisable = value8;
+        if (nvs_get_u8(handle, "backpacktlmen", &value8) == ESP_OK)
+            m_config.backpackTlmEnabled = value8;
     }
 
     for(unsigned i=0; i<64; i++)
@@ -338,6 +340,7 @@ TxConfig::Commit()
         nvs_set_u8(handle, "fanthresh", m_config.powerFanThreshold);
 
         nvs_set_u8(handle, "backpackdisable", m_config.backpackDisable);
+        nvs_set_u8(handle, "backpacktlmen", m_config.backpackTlmEnabled);
         nvs_set_u8(handle, "dvraux", m_config.dvrAux);
         nvs_set_u8(handle, "dvrstartdelay", m_config.dvrStartDelay);
         nvs_set_u8(handle, "dvrstopdelay", m_config.dvrStopDelay);
@@ -1032,14 +1035,28 @@ RxConfig::SetDefaults(bool commit)
         m_config.antennaMode = 0; // 0 is diversity for dual radio
 
 #if defined(GPIO_PIN_PWM_OUTPUTS)
-    for (unsigned int ch=0; ch<PWM_MAX_CHANNELS; ++ch) {
-        SetPwmChannel(ch, 1500, ch, false, 0, false);
+    for (unsigned int ch=0; ch<PWM_MAX_CHANNELS; ++ch)
+    {
+        uint8_t mode = som50Hz;
+        // setup defaults for hardware defined I2C pins that are also IO pins
+        if (ch < GPIO_PIN_PWM_OUTPUTS_COUNT)
+        {
+            if (GPIO_PIN_PWM_OUTPUTS[ch] == GPIO_PIN_SCL)
+            {
+                mode = somSCL;
+            }
+            else if (GPIO_PIN_PWM_OUTPUTS[ch] == GPIO_PIN_SDA)
+            {
+                mode = somSDA;
+            }
+        }
+        SetPwmChannel(ch, 512, ch, false, mode, false);
         SetPwmChannelLimits(ch, 885, 2135);
         #if defined(HAS_GYRO)
         SetGyroChannel(ch, 0, 0, 0);
         #endif
     }
-    SetPwmChannel(2, 988, 2, false, 0, false); // ch2 is throttle, failsafe it to 988
+    SetPwmChannel(2, 0, 2, false, 0, false); // ch2 is throttle, failsafe it to 988
 #endif
 #if defined(HAS_GYRO)
     SetGyroSAFEPitch(45);
