@@ -1,8 +1,9 @@
+#include "targets.h"
+
 #if defined(HAS_GYRO)
 #include "config.h"
 #include "mixer.h"
 #include "gyro.h"
-#include "targets.h"
 #include "logging.h"
 
 #define GYRO_SUBTRIM_INIT_SAMPLES 10

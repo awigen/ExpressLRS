@@ -1,5 +1,6 @@
-#if defined(HAS_GYRO)
 #include "targets.h"
+
+#if defined(HAS_GYRO)
 #include "gyro_mpu6050.h"
 #include "MPU6050_6Axis_MotionApps612.h"
 #include "logging.h"
@@ -18,7 +19,7 @@ uint8_t fifoBuffer[64];   // FIFO storage buffer
 
 unsigned long last_gyro_update;
 
-#ifdef GYRO_STATS
+#ifdef DEBUG_GYRO_STATS
 /**
  * For debugging print useful gyro state
  */
@@ -262,7 +263,7 @@ bool GyroDevMPU6050::read() {
         return false;
     }
 
-    #ifdef GYRO_STATS
+    #ifdef DEBUG_GYRO_STATS
     print_gyro_stats();
     #endif
 

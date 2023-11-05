@@ -1,6 +1,6 @@
-#if defined(HAS_GYRO)
 #include "targets.h"
-#include "elrs_eeprom.h"
+
+#if defined(HAS_GYRO)
 #include "config.h"
 #include "gyro.h"
 #include "gyro_types.h"
@@ -11,7 +11,6 @@
 #include "mode_hover.h"
 #include "mode_rate.h"
 #include "mode_safe.h"
-#include "mixer.h"
 #include "telemetry.h"
 #include "logging.h"
 

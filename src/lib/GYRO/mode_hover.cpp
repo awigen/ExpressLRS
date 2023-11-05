@@ -1,7 +1,7 @@
-#if defined(HAS_GYRO)
 #include "mode_hover.h"
 #include "gyro.h"
 
+#if defined(HAS_GYRO)
 /**
  * Airplane Hover Mode
  *

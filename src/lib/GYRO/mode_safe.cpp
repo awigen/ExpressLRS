@@ -1,9 +1,8 @@
+#include "gyro.h"
+
 #if defined(HAS_GYRO)
-#include "targets.h"
-#include "elrs_eeprom.h"
 #include "config.h"
 #include "mode_safe.h"
-#include "gyro.h"
 #include "mixer.h"
 #include "pid.h"
 #include "gyro_types.h"

@@ -707,12 +707,14 @@ void RxConfig::Load()
     // If version is current, all done
     if (version == RX_CONFIG_VERSION)
     {
+#if defined(HAS_GYRO)
         DBGLN("Limits:")
         for (uint8_t i = 0; i < PWM_MAX_CHANNELS; i++)
         {
             const rx_config_pwm_limits_t *limits = GetPwmChannelLimits(i);
             DBGLN("Channel %d: %d - %d", i, limits->val.min, limits->val.max);
         }
+#endif
         return;
     }
 

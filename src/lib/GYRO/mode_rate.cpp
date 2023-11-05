@@ -1,6 +1,7 @@
+#include "gyro.h"
+
 #if defined(HAS_GYRO)
 #include "mode_rate.h"
-#include "gyro.h"
 
 /**
  * Airplane Normal Mode / Rate Mode

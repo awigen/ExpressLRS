@@ -1,12 +1,12 @@
 #pragma once
+#include "targets.h"
+
 #if defined(HAS_GYRO)
 #include "device.h"
 #include "pid.h"
 #include "gyro_types.h"
 #include <math.h>
 #include "helper_3dmath.h"
-
-#define GYRO_DEV_MPU6050
 
 #define GYRO_US_MIN 988
 #define GYRO_US_MID 1500
@@ -78,5 +78,4 @@ void configure_pids(float roll_limit, float pitch_limit, float yaw_limit);
 
 // Helper method to congiure a PID controller instance use the rx config values
 void configure_pid_gains(PID* pid, const rx_config_gyro_gains_t* gains, float max, float min);
-
 #endif

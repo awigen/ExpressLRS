@@ -28,7 +28,7 @@ class GyroDevMPU6050 : public GyroDevice
         void calibrate();
     private:
         void dmpGetYawPitchRoll(float *data, Quaternion *q, VectorFloat *gravity);
-        #ifdef GYRO_STATS
+        #ifdef DEBUG_GYRO_STATS
         void print_gyro_stats();
         unsigned long last_gyro_stats_time;
         #endif

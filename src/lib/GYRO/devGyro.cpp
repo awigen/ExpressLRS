@@ -1,10 +1,11 @@
-#if defined(HAS_GYRO)
 #include "targets.h"
-#include "devGyro.h"
+
+#if defined(HAS_GYRO)
 #include "gyro.h"
 #include "gyro_mpu6050.h"
 #include "mixer.h"
 #include "logging.h"
+#include "elrs_eeprom.h" // only needed to satisfy PIO
 #include "config.h"
 
 Gyro gyro = Gyro();

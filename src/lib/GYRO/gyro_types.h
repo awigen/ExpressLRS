@@ -1,4 +1,3 @@
-#if defined(HAS_GYRO)
 #pragma once
 #include <stdint.h>
 
@@ -112,4 +111,3 @@ typedef struct {
 } rx_config_gyro_calibration_t;
 
 constexpr uint8_t GYRO_MAX_CHANNELS = 16;
-#endif
