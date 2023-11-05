@@ -1,10 +1,11 @@
+#include "targets.h"
 #include "pid.h"
-#include "native.h"
+
 unsigned long last_update;
 
 PID::PID(float max, float min, float Kp, float Ki, float Kd)
-    : _max(max),
-      _min(min),
+    : _maximum(max),
+      _minimum(min),
       _Kp(Kp),
       _Ki(Ki),
       _Kd(Kd),
@@ -23,8 +24,8 @@ void PID::configure(float Kp, float Ki, float Kd, float max, float min)
     _Kp = Kp;
     _Ki = Ki;
     _Kd = Kd * 10;
-    _max = max;
-    _min = min;
+    _maximum = max;
+    _minimum = min;
     tau = 0.02;
 }
 
@@ -60,10 +61,10 @@ float PID::calculate(float _setpoint, float _pv)
     _integral += current_error * _dt;
 
     // Limit the I accumulation within min/max
-    _integral = (_integral * _Ki) > _max
-                    ? _max / _Ki
-                : (_integral * _Ki) < _min
-                    ? _min / _Ki
+    _integral = (_integral * _Ki) > _maximum
+                    ? _maximum / _Ki
+                : (_integral * _Ki) < _minimum
+                    ? _minimum / _Ki
                     : _integral;
 
     Iout = _Ki * _integral;
@@ -78,10 +79,10 @@ float PID::calculate(float _setpoint, float _pv)
     output = Pout + Iout + Dout;
 
     // Limit output
-    if (output > _max)
-        output = _max;
-    if (output < _min)
-        output = _min;
+    if (output > _maximum)
+        output = _maximum;
+    if (output < _minimum)
+        output = _minimum;
 
     // Save error to previous error
     error = current_error;

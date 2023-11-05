@@ -7,24 +7,32 @@
 #include "logging.h"
 #include "elrs_eeprom.h" // only needed to satisfy PIO
 #include "config.h"
+#include "MPU6050.h"
+
+extern boolean i2c_enabled;
 
 Gyro gyro = Gyro();
 
-#ifdef GYRO_DEVICE_MPU6050
-static GyroDevMPU6050 gyro_device = GyroDevMPU6050();
-#else
-#error HAS_GYRO is defined but no valid GYRO_DEVICE_* defined
-#endif
-
 static void initialize()
 {
-    gyro.dev = &gyro_device;
-    gyro.dev->initialize();
+    if (!i2c_enabled)
+    {
+        return;
+    }
+#ifdef GYRO_DEVICE_MPU6050
+    Wire.setClock(400000);
+    auto mpu = MPU6050();
+    if (mpu.testConnection())
+    {
+        gyro.dev =  new GyroDevMPU6050();
+        gyro.dev->initialize();
+        DBGLN("Detected MPU6050 Gyro");
+    }
+#endif
 }
 
 static bool gyro_detect() {
-    // FIXME: Add a detection routine
-    return true;
+    return gyro.dev != nullptr;
 }
 
 static int start()

@@ -8,8 +8,8 @@ public:
     void reset();
     void configure(float Kp, float Ki, float Kd, float max = 1.0, float min = -1.0);
 
-    float _max;
-    float _min;
+    float _maximum;
+    float _minimum;
     float _Kp;
     float _Ki;
     float _Kd;

@@ -41,7 +41,7 @@ public:
     void calibrate();
     void reload();
 
-    GyroDevice *dev;
+    GyroDevice *dev = nullptr;
 
     float gain = 1.0;
 // protected:
