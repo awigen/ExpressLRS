@@ -612,8 +612,8 @@ static void registerLuaParameters()
     registerLUAParameter(&luaMappingOutputMode, &luaparamMappingOutputMode, luaMappingFolder.common.id);
     registerLUAParameter(&luaMappingInverted, &luaparamMappingInverted, luaMappingFolder.common.id);
     registerLUAParameter(&luaSetFailsafe, &luaparamSetFailsafe);
-    registerLUAParameter(&luaMappingChannelLimitMin, &luaparamMappingChannelLimitMin, luaMappingFolder.common.id);
-    registerLUAParameter(&luaMappingChannelLimitMax, &luaparamMappingChannelLimitMax, luaMappingFolder.common.id);
+    // registerLUAParameter(&luaMappingChannelLimitMin, &luaparamMappingChannelLimitMin, luaMappingFolder.common.id);
+    // registerLUAParameter(&luaMappingChannelLimitMax, &luaparamMappingChannelLimitMax, luaMappingFolder.common.id);
 
     #if defined(HAS_GYRO)
     registerLUAParameter(&luaGyroModesFolder);
