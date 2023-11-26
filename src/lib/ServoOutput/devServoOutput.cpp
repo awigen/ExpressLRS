@@ -102,7 +102,10 @@ static void servosUpdate(unsigned long now)
         for (unsigned ch = 0 ; ch < GPIO_PIN_PWM_OUTPUTS_COUNT ; ++ch)
         {
             const rx_config_pwm_t *chConfig = config.GetPwmChannel(ch);
-            const unsigned crsfVal = ChannelData[chConfig->val.inputChannel];
+            const unsigned crsfVal = ChannelMixedData[chConfig->val.inputChannel];
+
+            // DBGLN("Ch %d CRSF %d Mixed %d", ch, ChannelData[chConfig->val.inputChannel], ChannelMixedData[chConfig->val.inputChannel])
+
             // crsfVal might 0 if this is a switch channel, and it has not been
             // received yet. Delay initializing the servo until the channel is valid
             if (crsfVal == 0)

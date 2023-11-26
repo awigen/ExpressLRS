@@ -256,3 +256,4 @@ bool isDualRadio();
 #define ELRS_CRC14_POLY 0x2E57 // 0x372B
 
 extern uint32_t ChannelData[CRSF_NUM_CHANNELS]; // Current state of channels, CRSF format
+extern uint32_t ChannelMixedData[CRSF_NUM_CHANNELS]; // Current state of channels after mixing, CRSF format

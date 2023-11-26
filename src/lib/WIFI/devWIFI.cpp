@@ -2,6 +2,7 @@
 
 #if defined(PLATFORM_ESP8266) || defined(PLATFORM_ESP32)
 
+#define ARDUINOJSON_USE_LONG_LONG 1
 #include <AsyncJson.h>
 #include <ArduinoJson.h>
 #if defined(PLATFORM_ESP8266)
@@ -30,6 +31,7 @@
 #include <StreamString.h>
 
 #include <ESPAsyncWebServer.h>
+#define ARDUINOJSON_USE_LONG_LONG 1
 #include "AsyncJson.h"
 #include "ArduinoJson.h"
 
@@ -336,6 +338,10 @@ static void GetConfiguration(AsyncWebServerRequest *request)
     json["config"]["sbus-failsafe"] = config.GetFailsafeMode();
     json["config"]["modelid"] = config.GetModelId();
     json["config"]["force-tlm"] = config.GetForceTlmOff();
+
+    for (uint8_t mix=0; mix < MAX_MIXES; mix++)
+      json["config"]["mixes"][mix]["config"] = config.GetMix(mix)->raw;
+
     #if defined(GPIO_PIN_PWM_OUTPUTS)
     for (uint8_t ch=0; ch<GPIO_PIN_PWM_OUTPUTS_COUNT; ++ch)
     {
@@ -482,6 +488,16 @@ static void UpdateConfiguration(AsyncWebServerRequest *request, JsonVariant &jso
   long forceTlm = json["force-tlm"] | 0;
   DBGLN("Setting force telemetry %u", (uint8_t)forceTlm);
   config.SetForceTlmOff(forceTlm != 0);
+
+  JsonArray mixes = json["mixes"].as<JsonArray>();
+  for(uint8_t mix_number = 0 ; mix_number < mixes.size(); mix_number++)
+  {
+    uint64_t val = mixes[mix_number];
+    char line[30];
+    sprintf(line, "got mix %llu", val);
+    DBGLN("%s", line);
+    config.SetMixerRaw(mix_number, val);
+  }
 
   #if defined(GPIO_PIN_PWM_OUTPUTS)
   JsonArray pwm = json["pwm"].as<JsonArray>();

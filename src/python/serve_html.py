@@ -42,30 +42,69 @@ config = {
             "ssid":"network-ssid",
             "mode":"STA",
             "modelid":255,
+            "mixes":[
+                { "config": 1 + (0<<1) + (0<<7) + (156<<13) + (100<<21) + (0<<29) },
+                { "config": 1 + (1<<1) + (1<<7) + (100<<13) + (100<<21) + (0<<29) },
+                { "config": 1 + (2<<1) + (2<<7) + (100<<13) + (100<<21) + (0<<29) },
+                { "config": 1 + (3<<1) + (3<<7) + (100<<13) + (100<<21) + (0<<29) },
+                { "config": 1 + (4<<1) + (4<<7) + (100<<13) + (100<<21) + (0<<29) },
+                { "config": 1 + (5<<1) + (5<<7) + (100<<13) + (100<<21) + (0<<29) },
+                { "config": 1 + (6<<1) + (6<<7) + (100<<13) + (100<<21) + (0<<29) },
+                { "config": 1 + (7<<1) + (7<<7) + (100<<13) + (100<<21) + (0<<29) },
+                { "config": 1 + (8<<1) + (8<<7) + (100<<13) + (100<<21) + (0<<29) },
+                { "config": 1 + (9<<1) + (9<<7) + (100<<13) + (100<<21) + (0<<29) },
+                { "config": 1 + (10<<1) + (10<<7) + (100<<13) + (100<<21) + (0<<29) },
+                { "config": 1 + (11<<1) + (11<<7) + (100<<13) + (100<<21) + (0<<29) },
+                { "config": 1 + (12<<1) + (12<<7) + (100<<13) + (100<<21) + (0<<29) },
+                { "config": 1 + (13<<1) + (13<<7) + (100<<13) + (100<<21) + (0<<29) },
+                { "config": 1 + (14<<1) + (14<<7) + (100<<13) + (100<<21) + (0<<29) },
+                { "config": 1 + (15<<1) + (15<<7) + (100<<13) + (100<<21) + (0<<29) },
+                { "config": 0 },
+                { "config": 0 },
+                { "config": 0 },
+                { "config": 0 },
+                { "config": 0 },
+                { "config": 0 },
+                { "config": 0 },
+                { "config": 0 },
+                { "config": 0 },
+                { "config": 0 },
+                { "config": 0 },
+                { "config": 0 },
+                { "config": 0 },
+                { "config": 0 },
+                { "config": 0 },
+                { "config": 0 },
+            ],
             "pwm":[
                 {
                     # 10fs 4ch 1inv 4mode 1narrow
                     "config": 0 + 0<<10 + 0<14 + 0<<15 + 0<<19,
+                    "limits": {"min": 900, "max": 1950},
                     "pin": 0,
                     "features": 12
                 },
                 {
                     "config": 1536,
+                    "limits": {"min": 900, "max": 1950},
                     "pin": 4,
                     "features": 12 + 16
                 },
                 {
                     "config": 2048,
+                    "limits": {"min": 900, "max": 1950},
                     "pin": 5,
                     "features": 12 + 16
                 },
                 {
                     "config": 3584,
+                    "limits": {"min": 900, "max": 1950},
                     "pin": 1,
                     "features": 1 + 16
                 },
                 {
                     "config": 4608,
+                    "limits": {"min": 900, "max": 1950},
                     "pin": 3,
                     "features": 2 + 16
                 }
@@ -168,11 +207,22 @@ def options():
 def update_config():
     if 'button-actions' in request.json:
         config['config']['button-actions'] = request.json['button-actions']
+    if 'mixes' in request.json:
+        i=0
+        for mix in request.json['mixes']:
+            try:
+                config['config']['mixes'][i]['config'] = mix
+            except IndexError:
+                pass
+            i = i + 1
     if 'pwm' in request.json:
         i=0
         for x in request.json['pwm']:
             print(x)
-            config['config']['pwm'][i]['config'] = x
+            try:
+                config['config']['pwm'][i]['config'] = x
+            except IndexError:
+                pass
             i = i + 1
     if 'protocol' in request.json:
         config['config']['serial-protocol'] = request.json['protocol']
@@ -208,4 +258,4 @@ def mode():
     return '[]'
 
 if __name__ == '__main__':
-    run(host='localhost', port=8080)
+    run(host='localhost', port=8081)

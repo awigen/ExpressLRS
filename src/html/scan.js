@@ -16,6 +16,83 @@ function _(el) {
   return document.getElementById(el);
 }
 
+function notworkingint8ToBigInt(signed8BitInteger) {
+  if (signed8BitInteger >> 7)
+    return Number.parseInt(
+      (~(signed8BitInteger & 0x7f) + 1).toString(2)
+      ,2
+    )
+  else
+      return signed8BitInteger
+}
+
+function int11ToBigInt(signed11BitInteger) {
+  if (signed11BitInteger >> 10)
+    return Number.parseInt(
+      (~(signed11BitInteger & 0x3ff) + 1).toString(2)
+      ,2
+    )
+  else
+      return signed11BitInteger
+}
+
+function int8ToBigInt(signed8BitInteger) {
+    if (signed8BitInteger >> 7)
+      return - BigInt(Number.parseInt(
+        (~signed8BitInteger + 1 >>> 0).toString(2).slice(-7)
+        , 2));
+    else
+      return BigInt(signed8BitInteger);
+}
+
+function numberToInt8(number) {
+  number = number|0 & 0xFF
+  if (number < 0)
+    // Two's complement, and set the -2^8 bit
+    return (~number + 1 >>> 0) | 1 << 7
+  return number
+}
+
+function numberToInt11(number) {
+  number = number|0 & 0x7FF
+  if (number < 0)
+    // Two's complement, and set the -2^11 bit
+    return (~number + 1 >>> 0) | 1 << 10
+  return number
+}
+
+function getMixesFormData() {
+  let mix = 0;
+  let inField;
+  const outData = [];
+  const int8A = new Uint8Array(2);
+  while (inField = _(`mix_${mix}`)) {
+    const active = BigInt(_(`mix_${mix}_active`).checked ? 1 : 0);
+    const source = BigInt(_(`mix_${mix}_source`).value);
+    const destination = BigInt(_(`mix_${mix}_destination`).value);
+    const neg = Number(_(`mix_${mix}_wneg`).value) + 127; // 0x7F
+    const pos = Number(_(`mix_${mix}_wpos`).value) + 127;
+    int8A[0] = _(`mix_${mix}_wneg`).value;
+    int8A[1] = _(`mix_${mix}_wpos`).value;
+    // console.log('weights', int8A);
+    // const w_neg = BigInt(numberToInt8(_(`mix_${mix}_wneg`).value));
+    // const w_pos = BigInt(numberToInt8(_(`mix_${mix}_wpos`).value));
+    const offset = BigInt(numberToInt11(_(`mix_${mix}_offset`).value));
+    const raw = active | (source << 1n) | (destination << 7n) |
+      (BigInt(_(`mix_${mix}_wneg`).value & 0xff) << 13n) |
+      (BigInt(_(`mix_${mix}_wpos`).value & 0xff) << 21n) |
+      ((offset & 0x7ffn) << 29n);
+    outData.push(Number(raw));
+    // I can't make ArduinoJson handle 64bit values even with ARDUINOJSON_USE_LONG_LONG
+    // Send two 32bit values instead...
+    // outData.push(Number(raw & 0xFFFFFFFFn));
+    // outData.push(Number(raw >> 32n));
+    mix++;
+  }
+  console.log(outData);
+  return outData;
+}
+
 function getPwmFormData() {
   let ch = 0;
   let inField;
@@ -63,6 +140,72 @@ function generateFeatureBadges(features) {
 }
 
 @@if not isTX:
+const channels = ['ch1', 'ch2', 'ch3', 'ch4',
+'ch5 (AUX1)', 'ch6 (AUX2)', 'ch7 (AUX3)', 'ch8 (AUX4)',
+'ch9 (AUX5)', 'ch10 (AUX6)', 'ch11 (AUX7)', 'ch12 (AUX8)',
+'ch13 (AUX9)', 'ch14 (AUX10)', 'ch15 (AUX11)', 'ch16 (AUX12)'];
+
+function hideUnusedMixes() {
+  const MAX_MIXES = 32
+  const highestMix =
+    Math.max.apply(null,
+      Array.from({ length: MAX_MIXES }, (_, i) => i)
+        .map((i) => _(`mix_${i}_active`)?.checked ? i : 0)
+    )
+  for (let i = 0; i < MAX_MIXES; i++) {
+    if (_(`mix_${i}`) === null) continue
+    _(`mix_${i}`).hidden = i > highestMix + 1
+  }
+}
+
+function updateMixerSettings(arMixes) {
+  if (arMixes === undefined) {
+    // if (_('mix_table')) _('mix_table').style.display = 'none';
+    return;
+  }
+
+  // arMixes is an array of one 64bit integer per mix.
+  const htmlFields = [`<div class="mui-panel" id="mix_table"><table class="pwmtbl mui-table"><tr>
+    <th>Mix</th><th>Active</th><th>Source</th><th>Destination</th><th>Weight Negative</th><th>Weight Positive</th><th>Offset / Trim</th></tr>`];
+  arMixes.forEach((item, index) => {
+    const value = BigInt(item.config)
+    const active      = Number(value & 1n);
+    const source      = Number((value >> 1n) & 63n);    // 6 bits
+    const destination = Number((value >> 7n) & 63n);    // 6 bits
+    const weight_neg  = Number(int8ToBigInt(Number((value >> 13n) & 255n)));  // 8 bits
+    const weight_pos  = Number(int8ToBigInt(Number((value >> 21n) & 255n)));  // 8 bits
+    const offset      = Number(int11ToBigInt(Number((value >> 29n) & 2047n))); // 11 bits
+
+    const sourceSelect = enumSelectGenerate(
+      `mix_${index}_source`, source, channels.map((name) => `CRSF ${name}`)
+    );
+    const destinationSelect = enumSelectGenerate(
+      `mix_${index}_destination`, destination, channels.map((name) => `Output ${name}`)
+    );
+    htmlFields.push(`
+    <tr id="mix_${index}">
+    <td>${index + 1}</td>
+    <td><div class="mui-checkbox mui--text-center">
+      <input type="checkbox" id="mix_${index}_active"${(active) ? ' checked' : ''} onClick="hideUnusedMixes()"></div>
+    </td>
+    <td>${sourceSelect}</td>
+    <td>${destinationSelect}</td>
+    <td><div class="mui-textfield compact"><input id="mix_${index}_wneg" value="${weight_neg}" size="6"/></div></td>
+    <td><div class="mui-textfield compact"><input id="mix_${index}_wpos" value="${weight_pos}" size="6"/></div></td>
+    <td><div class="mui-textfield compact"><input id="mix_${index}_offset" value="${offset}" size="6"/></div></td>
+    </tr>
+    `)
+  })
+  htmlFields.push('</table></div>');
+
+  const grp = document.createElement('DIV');
+  grp.setAttribute('class', 'group');
+  grp.innerHTML = htmlFields.join('');
+
+  _('mixes').appendChild(grp);
+  hideUnusedMixes();
+}
+
 function updatePwmSettings(arPwm) {
   if (arPwm === undefined) {
     if (_('model_tab')) _('model_tab').style.display = 'none';
@@ -114,11 +257,7 @@ function updatePwmSettings(arPwm) {
     }
     modes.push(undefined);  // true PWM
     const modeSelect = enumSelectGenerate(`pwm_${index}_mode`, mode, modes);
-    const inputSelect = enumSelectGenerate(`pwm_${index}_ch`, ch,
-        ['ch1', 'ch2', 'ch3', 'ch4',
-          'ch5 (AUX1)', 'ch6 (AUX2)', 'ch7 (AUX3)', 'ch8 (AUX4)',
-          'ch9 (AUX5)', 'ch10 (AUX6)', 'ch11 (AUX7)', 'ch12 (AUX8)',
-          'ch13 (AUX9)', 'ch14 (AUX10)', 'ch15 (AUX11)', 'ch16 (AUX12)']);
+    const inputSelect = enumSelectGenerate(`pwm_${index}_ch`, ch, channels);
     htmlFields.push(`<tr><td class="mui--text-center mui--text-title">${index + 1}</td>
             <td>${generateFeatureBadges(features)}</td>
             <td>${modeSelect}</td>
@@ -336,6 +475,7 @@ function updateConfig(data, options) {
       _('sbus-config').style.display = 'none';
     }
   }
+  updateMixerSettings(data.mixes);
   updatePwmSettings(data.pwm);
   _('serial-protocol').value = data['serial-protocol'];
   _('serial-protocol').onchange();
@@ -617,6 +757,7 @@ if (_('config')) {
       (xmlhttp) => {
         xmlhttp.setRequestHeader('Content-Type', 'application/json');
         return JSON.stringify({
+          "mixes": getMixesFormData(),
           "pwm": getPwmFormData(),
           "serial-protocol": +_('serial-protocol').value,
           "sbus-failsafe": +_('sbus-failsafe').value,

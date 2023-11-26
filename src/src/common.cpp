@@ -112,6 +112,7 @@ connectionState_e connectionState = disconnected;
 bool connectionHasModelMatch;
 
 uint32_t ChannelData[CRSF_NUM_CHANNELS];      // Current state of channels, CRSF format
+uint32_t ChannelMixedData[CRSF_NUM_CHANNELS]; // Current state of channels after mixing, CRSF format
 
 uint8_t MasterUID[6];                       // The definitive user UID
 uint8_t UID[6];                             // The currently running UID

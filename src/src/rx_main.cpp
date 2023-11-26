@@ -228,6 +228,75 @@ void ExitBindingMode();
 void OnELRSBindMSP(uint8_t* packet);
 extern void setWifiUpdateMode();
 
+void applyMixes()
+{
+    int64_t newChannelData[CRSF_NUM_CHANNELS];
+    for (uint8_t i = 0; i < CRSF_NUM_CHANNELS; i++)
+        newChannelData[i] = CRSF_CHANNEL_VALUE_MID;
+    
+    // memset(newChannelData, 0, sizeof(newChannelData));
+
+    for (unsigned mix_number = 0; mix_number < MAX_MIXES; mix_number++)
+    {
+        const rx_config_mix_t *mix = config.GetMix(mix_number);
+
+        if (!mix->val.active)
+            continue;
+        
+        newChannelData[mix->val.destination] += mix->val.offset;
+
+        // The fist 16 enums are CRSF input channels
+        if (mix->val.source < 16)
+        {
+            const unsigned crsfVal = ChannelData[mix->val.source];
+            if (crsfVal < CRSF_CHANNEL_VALUE_MID)
+            {
+                uint16_t command = CRSF_CHANNEL_VALUE_MID - crsfVal;
+                int8_t scale = mix->val.weight_negative;
+                int32_t scaled = command * scale / 100;
+                newChannelData[mix->val.destination] -= scaled;
+            }
+            else
+            {
+                uint16_t value = crsfVal - CRSF_CHANNEL_VALUE_MID;
+                int8_t scale = mix->val.weight_positive;
+                int32_t result = value * scale / 100;
+                newChannelData[mix->val.destination] += result;
+            }
+        }
+        else
+        {
+            switch (mix->val.source)
+            {
+            case MIX_SOURCE_FAILSAFE:
+            {
+                // This is a full max throw input when we are in failsafe which
+                // can be mixed to other channels.
+                int8_t scale = (int8_t) mix->val.weight_positive;
+                uint32_t result = (CRSF_CHANNEL_VALUE_MAX - CRSF_CHANNEL_VALUE_MID) * scale / 100;
+                newChannelData[mix->val.destination] += result;
+                break;
+            }
+
+            // Later we will add other source mixes here (gyro, failsafe, etc)
+
+            default:
+                break;
+            }
+        }
+    }
+
+    for (unsigned ch = 0; ch < CRSF_NUM_CHANNELS; ch++)
+    {
+        if (newChannelData[ch] < CRSF_CHANNEL_VALUE_MIN)
+            ChannelMixedData[ch] = CRSF_CHANNEL_VALUE_MIN;
+        else if (newChannelData[ch] > CRSF_CHANNEL_VALUE_MAX)
+            ChannelMixedData[ch] = CRSF_CHANNEL_VALUE_MAX;
+        else
+            ChannelMixedData[ch] = newChannelData[ch];
+    }
+}
+
 uint8_t getLq()
 {
     return LQCalc.getLQ();
@@ -595,7 +664,7 @@ void ICACHE_RAM_ATTR updatePhaseLock()
             hwTimer::phaseShift(Offset >> 2);
         }
 
-        DBGVLN("%d:%d:%d:%d:%d", Offset, RawOffset, OffsetDx, hwTimer::FreqOffset, uplinkLQ);
+        // DBGVLN("%d:%d:%d:%d:%d", Offset, RawOffset, OffsetDx, hwTimer::FreqOffset, uplinkLQ);
         UNUSED(OffsetDx); // complier warning if no debug
     }
 
@@ -732,6 +801,7 @@ void ICACHE_RAM_ATTR HWtimerCallbackTock()
 
     if (ExpressLRS_currAirRate_Modparams->numOfSends > 1 && !(OtaNonce % ExpressLRS_currAirRate_Modparams->numOfSends) && LQCalcDVDA.currentIsSet())
     {
+        applyMixes();
         crsfRCFrameAvailable();
         servoNewChannelsAvailable();
     }
@@ -849,6 +919,7 @@ static void ICACHE_RAM_ATTR ProcessRfPacket_RC(OTA_Packet_s const * const otaPkt
     {
         if (ExpressLRS_currAirRate_Modparams->numOfSends == 1)
         {
+            applyMixes();
             crsfRCFrameAvailable();
             servoNewChannelsAvailable();
         }
