@@ -909,14 +909,14 @@ static void registerLuaParameters()
     registerLUAParameter(&luaGyroPIDRateD, &luaparamGyroPIDRateD, luaGyroGainFolder.common.id);
     registerLUAParameter(&luaGyroPIDGain, &luaparamGyroPIDGain, luaGyroGainFolder.common.id);
 
-    registerLUAParameter(&luaGyroInputFolder);
-    registerLUAParameter(&luaGyroInputChannel, &luaparamGyroInputChannel, luaGyroInputFolder.common.id);
-    registerLUAParameter(&luaGyroInputMode, &luaparamGyroInputMode, luaGyroInputFolder.common.id);
+    // registerLUAParameter(&luaGyroInputFolder);
+    // registerLUAParameter(&luaGyroInputChannel, &luaparamGyroInputChannel, luaGyroInputFolder.common.id);
+    // registerLUAParameter(&luaGyroInputMode, &luaparamGyroInputMode, luaGyroInputFolder.common.id);
 
-    registerLUAParameter(&luaGyroOutputFolder);
-    registerLUAParameter(&luaGyroOutputChannel, &luaparamGyroOutputChannel, luaGyroOutputFolder.common.id);
-    registerLUAParameter(&luaGyroOutputMode, &luaparamGyroOutputMode, luaGyroOutputFolder.common.id);
-    registerLUAParameter(&luaGyroOutputInverted, &luaparamGyroOutputInverted, luaGyroOutputFolder.common.id);
+    // registerLUAParameter(&luaGyroOutputFolder);
+    // registerLUAParameter(&luaGyroOutputChannel, &luaparamGyroOutputChannel, luaGyroOutputFolder.common.id);
+    // registerLUAParameter(&luaGyroOutputMode, &luaparamGyroOutputMode, luaGyroOutputFolder.common.id);
+    // registerLUAParameter(&luaGyroOutputInverted, &luaparamGyroOutputInverted, luaGyroOutputFolder.common.id);
 
     registerLUAParameter(&luaGyroSettingsFolder);
     registerLUAParameter(&luaGyroAlign, &luaparamGyroAlign, luaGyroSettingsFolder.common.id);
