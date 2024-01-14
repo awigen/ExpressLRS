@@ -223,7 +223,7 @@ static int timeout(devserial_ctx_t *ctx)
     // Verify there is new ChannelData and they should be sent on
     bool sendChannels = confirmFrameAvailable(ctx);
 
-    uint32_t duration = (*(ctx->io))->sendRCFrame(sendChannels, missed, ChannelData);
+    uint32_t duration = (*(ctx->io))->sendRCFrame(sendChannels, missed, ChannelMixedData);
 
     // still get telemetry and send link stats if theres no model match
     (*(ctx->io))->processSerialInput();
