@@ -729,13 +729,13 @@ void RxConfig::Load()
     if (version == RX_CONFIG_VERSION)
     {
         CheckUpdateFlashedUid(false);
-        DBGVLN("Limits:")
+        DBGVLN("Limits:");
         for (uint8_t i = 0; i < PWM_MAX_CHANNELS; i++)
         {
             const rx_config_pwm_limits_t *limits = GetPwmChannelLimits(i);
             DBGVLN("Channel %d: %d - %d", i, limits->val.min, limits->val.max);
         }
-        DBGVLN("Active mixes:")
+        DBGVLN("Active mixes:");
         for (unsigned mix_number = 0; mix_number < MAX_MIXES; mix_number++)
         {
             const rx_config_mix_t *mix = config.GetMix(mix_number);
@@ -749,7 +749,7 @@ void RxConfig::Load()
                 (int8_t) mix->val.weight_negative,
                 (int8_t) mix->val.weight_positive,
                 (uint16_t) mix->val.offset
-            )
+            );
         }
         return;
     }
