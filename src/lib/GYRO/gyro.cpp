@@ -132,8 +132,6 @@ void Gyro::mixer(uint8_t ch, uint16_t *us)
         return;
     #endif
 
-    return; // We no longer manipulate the us values...
-
     gyro_output_channel_function_t output_mode = config.GetGyroChannelOutputMode(ch);
     gyro_input_channel_function_t input_mode = config.GetGyroChannelInputMode(ch);
 
