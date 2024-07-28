@@ -785,16 +785,16 @@ static void luaparamMappingChannelOut(struct luaPropertiesCommon *item, uint8_t 
             pModeString = serial1_TX;
         }
         else
-        { 
+        {
             pModeString = no2Options;
         }
-    } 
+    }
     else
     {   // otherwise allow any pin to be either RX or TX but only once
         if (serial1txAssigned && !serial1rxAssigned)
         {
             pModeString = serial1_RX;
-        }        
+        }
         else if (serial1rxAssigned && !serial1txAssigned)
         {
             pModeString = serial1_TX;
@@ -803,7 +803,7 @@ static void luaparamMappingChannelOut(struct luaPropertiesCommon *item, uint8_t 
         else if (!serial1rxAssigned && !serial1txAssigned)
         {
             pModeString = serial1_BOTH;
-        } 
+        }
         else
         {
             pModeString = no2Options;
@@ -1042,8 +1042,8 @@ static void registerLuaParameters()
     registerLUAParameter(&luaMappingOutputMode, &luaparamMappingOutputMode, luaMappingFolder.common.id);
     registerLUAParameter(&luaMappingInverted, &luaparamMappingInverted, luaMappingFolder.common.id);
     registerLUAParameter(&luaSetFailsafe, &luaparamSetFailsafe);
-    // registerLUAParameter(&luaMappingChannelLimitMin, &luaparamMappingChannelLimitMin, luaMappingFolder.common.id);
-    // registerLUAParameter(&luaMappingChannelLimitMax, &luaparamMappingChannelLimitMax, luaMappingFolder.common.id);
+    registerLUAParameter(&luaMappingChannelLimitMin, &luaparamMappingChannelLimitMin, luaMappingFolder.common.id);
+    registerLUAParameter(&luaMappingChannelLimitMax, &luaparamMappingChannelLimitMax, luaMappingFolder.common.id);
 
     #if defined(HAS_GYRO)
     registerLUAParameter(&luaGyroModesFolder);
@@ -1060,14 +1060,14 @@ static void registerLuaParameters()
     registerLUAParameter(&luaGyroPIDRateD, &luaparamGyroPIDRateD, luaGyroGainFolder.common.id);
     registerLUAParameter(&luaGyroPIDGain, &luaparamGyroPIDGain, luaGyroGainFolder.common.id);
 
-    // registerLUAParameter(&luaGyroInputFolder);
-    // registerLUAParameter(&luaGyroInputChannel, &luaparamGyroInputChannel, luaGyroInputFolder.common.id);
-    // registerLUAParameter(&luaGyroInputMode, &luaparamGyroInputMode, luaGyroInputFolder.common.id);
+    registerLUAParameter(&luaGyroInputFolder);
+    registerLUAParameter(&luaGyroInputChannel, &luaparamGyroInputChannel, luaGyroInputFolder.common.id);
+    registerLUAParameter(&luaGyroInputMode, &luaparamGyroInputMode, luaGyroInputFolder.common.id);
 
-    // registerLUAParameter(&luaGyroOutputFolder);
-    // registerLUAParameter(&luaGyroOutputChannel, &luaparamGyroOutputChannel, luaGyroOutputFolder.common.id);
-    // registerLUAParameter(&luaGyroOutputMode, &luaparamGyroOutputMode, luaGyroOutputFolder.common.id);
-    // registerLUAParameter(&luaGyroOutputInverted, &luaparamGyroOutputInverted, luaGyroOutputFolder.common.id);
+    registerLUAParameter(&luaGyroOutputFolder);
+    registerLUAParameter(&luaGyroOutputChannel, &luaparamGyroOutputChannel, luaGyroOutputFolder.common.id);
+    registerLUAParameter(&luaGyroOutputMode, &luaparamGyroOutputMode, luaGyroOutputFolder.common.id);
+    registerLUAParameter(&luaGyroOutputInverted, &luaparamGyroOutputInverted, luaGyroOutputFolder.common.id);
 
     registerLUAParameter(&luaGyroSettingsFolder);
     registerLUAParameter(&luaGyroAlign, &luaparamGyroAlign, luaGyroSettingsFolder.common.id);
@@ -1113,7 +1113,7 @@ static int event()
 #if defined(PLATFORM_ESP32)
   setLuaTextSelectionValue(&luaSerial1Protocol, config.GetSerial1Protocol());
 #endif
-  
+
   setLuaTextSelectionValue(&luaSBUSFailsafeMode, config.GetFailsafeMode());
 
   if (GPIO_PIN_ANT_CTRL != UNDEF_PIN)
