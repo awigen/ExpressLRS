@@ -371,12 +371,12 @@ void Gyro::tick()
     ) {
         char piddebug[128];
         _make_gyro_debug_string(&pid_pitch, piddebug);
-        DBGLN("\nPID Pitch %s", piddebug)
+        DBGLN("\nPID Pitch %s", piddebug);
         _make_gyro_debug_string(&pid_roll, piddebug);
-        DBGLN("PID Roll  %s", piddebug)
+        DBGLN("PID Roll  %s", piddebug);
         _make_gyro_debug_string(&pid_yaw, piddebug);
-        DBGLN("PID Yaw   %s", piddebug)
-        DBGLN("GAIN %f", gain)
+        DBGLN("PID Yaw   %s", piddebug);
+        DBGLN("GAIN %f", gain);
         gyro_debug_time = micros();
     }
     #endif
